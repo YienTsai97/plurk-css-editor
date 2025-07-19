@@ -1,5 +1,6 @@
 import { PlurkDashboard } from "@/components/preview/plurk-dashboard";
 import { PlurkTimeline } from "@/components/preview/plurk-timeline";
+import PlurkTimelineControl from "@/components/preview/plurk-timeline-control";
 import { PlurkTopBar } from "@/components/preview/plurk-top-bar";
 
 const PlurkPreviewPage = () => (
@@ -9,6 +10,7 @@ const PlurkPreviewPage = () => (
       <div id="layout_content_html" className="_lch_">
         <div id="layout_content" className="_lc_ clearfix">
           <PlurkTimeline />
+          <PlurkTimelineControl />
           <PlurkDashboard />
         </div>
       </div>
