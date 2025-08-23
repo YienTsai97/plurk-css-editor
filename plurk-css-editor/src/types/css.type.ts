@@ -1,0 +1,39 @@
+import { ColorResult } from "react-color";
+
+export type CssValue = string | number | ColorResult;
+
+export type StyleKey =
+  | "backgroundColor"
+  | "border"
+  | "color"
+  | "fontSize"
+  | "borderRadius"
+  | "letterSpacing"
+  | "wordSpacing"
+  | "margin"
+  | "marginTop"
+  | "marginRight"
+  | "marginBottom"
+  | "marginLeft"
+  | "padding"
+  | "paddingTop"
+  | "paddingRight"
+  | "paddingBottom"
+  | "paddingLeft"
+  | "top"
+  | "left"
+  | "right"
+  | "bottom"
+  | "width"
+  | "height"
+  | "minWidth"
+  | "minHeight"
+  | "maxWidth"
+  | "maxHeight"
+  | "gap"
+  | "lineHeight"
+  | "fontWeight"
+  | "zIndex"
+  | "opacity"
+  | "flex";
+// ...add more

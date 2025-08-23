@@ -1,6 +1,6 @@
 "use client"
 import { useEffect, useState } from "react"
-import PlurkPost from "./plurk-post/plurk-post"
+import PlurkPost from "../plurk-post/plurk-post"
 
 const PlurkTimelinePosts = () => {
   const [isHovered, setIsHovered] = useState(false)
@@ -51,7 +51,7 @@ const PlurkTimelinePosts = () => {
         {`
         .timeline-cnt .plurk {
           position: absolute;
-          z-index: 1000;
+          z-index: 5;
           cursor: pointer;
         }
         .plurk {
@@ -64,7 +64,7 @@ const PlurkTimelinePosts = () => {
         }
           .timeline-cnt .plurk_box {
     width: 503px;
-    z-index: 1300;
+    z-index: 10;
 }
         `}
       </style>

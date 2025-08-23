@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-const PlurkTimelineControl = () => {
+export const PlurkTimelineControl = () => {
   return (
     <>
       <style>
@@ -153,4 +153,3 @@ const PlurkTimelineControl = () => {
   )
 }
 
-export default PlurkTimelineControl

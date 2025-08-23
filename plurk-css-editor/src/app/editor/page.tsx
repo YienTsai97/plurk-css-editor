@@ -1,7 +1,9 @@
+import { CssImport } from "@/components/preview/common/css-import";
+import { ExportButton } from "@/components/preview/common/export-button";
 import { PlurkDashboard } from "@/components/preview/plurk-dashboard/plurk-dashboard";
 import { PlurkFooter } from "@/components/preview/plurk-footer";
-import { PlurkTimeline } from "@/components/preview/plurk-timeline";
-import PlurkTimelineControl from "@/components/preview/plurk-timeline-control";
+import { PlurkTimeline } from "@/components/preview/plurk-timeline/plurk-timeline";
+import { PlurkTimelineControl } from "@/components/preview/plurk-timeline/plurk-timeline-control";
 import { PlurkTopBar } from "@/components/preview/plurk-top-bar";
 
 const PlurkPreviewPage = () => (
@@ -26,11 +28,11 @@ body {
           margin: 0;
           padding: 0;
         }
-        // a {
-        //   color: #FF574D;
-        //   text-decoration: none;
-        //   cursor: pointer;
-        // }
+        /* a {
+          color: #FF574D;
+          text-decoration: none;
+          cursor: pointer;
+        } */
         body.language-large-font {
           font-size: 13px;
         }
@@ -63,6 +65,8 @@ i {
           <PlurkTimelineControl />
           <PlurkDashboard />
           <PlurkFooter />
+          <ExportButton />
+          <CssImport />
         </div>
       </div>
     </div>
