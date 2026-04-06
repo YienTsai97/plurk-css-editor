@@ -1,15 +1,17 @@
 type StyleProps = {
   bgColor: string;
+  bgImage: string;
   border: string;
   nameColor: string;
   hasManualChanges: boolean;
   bgColorChanged: boolean;
+  bgImageChanged: boolean;
   borderChanged: boolean;
   nameColorChanged: boolean;
 }
 
 // 靜態樣式組件
-export const StaticStyles = ({ bgColor, border }: Pick<StyleProps, 'bgColor' | 'border'>) => (
+export const StaticStyles = ({ bgColor, bgImage, border }: Pick<StyleProps, 'bgColor' | 'bgImage' | 'border'>) => (
   <style>
     {`
     .timeline-cnt .display table { width: 100%; }
@@ -21,6 +23,7 @@ export const StaticStyles = ({ bgColor, border }: Pick<StyleProps, 'bgColor' | '
       font-weight: normal;
       color: #111;
       background-color: ${bgColor};
+      background-image: ${bgImage};
       padding: 2px 0 0;
       line-height: 1.3;
       box-shadow: 1px 1px 3px -3px #000;
@@ -44,9 +47,11 @@ export const StaticStyles = ({ bgColor, border }: Pick<StyleProps, 'bgColor' | '
 // 高特異性樣式組件 - 只覆蓋有變化的屬性
 export const HighSpecificityStyles = ({
   bgColor,
+  bgImage,
   border,
   nameColor,
   bgColorChanged,
+  bgImageChanged,
   borderChanged,
   nameColorChanged,
   hasManualChanges
@@ -60,6 +65,11 @@ export const HighSpecificityStyles = ({
       ${bgColorChanged ? `
       body#pcg .plurk_cnt.plurk_cnt.plurk_cnt {
         background-color: ${bgColor};
+      }` : ''}
+
+      ${bgImageChanged ? `
+      body#pcg .plurk_cnt.plurk_cnt.plurk_cnt {
+        background-image: ${bgImage};
       }` : ''}
       
       ${borderChanged ? `
@@ -79,7 +89,7 @@ export const HighSpecificityStyles = ({
 // 樣式組件組合器
 export const PlurkPostStyles = (props: StyleProps) => (
   <>
-    <StaticStyles bgColor={props.bgColor} border={props.border} />
+    <StaticStyles bgColor={props.bgColor} bgImage={props.bgImage} border={props.border} />
     <HighSpecificityStyles {...props} />
   </>
 );

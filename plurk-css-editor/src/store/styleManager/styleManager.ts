@@ -3,7 +3,8 @@ import { CssValue, StyleKey } from "@/types/css.type";
 import { shallow } from "zustand/shallow";
 import { createWithEqualityFn } from "zustand/traditional";
 
-type StyleDict = Record<string, Partial<Record<StyleKey, CssValue>>>
+type StyleProps = Partial<Record<StyleKey, CssValue>>
+type StyleDict = Record<string, StyleProps>
 
 // 新增：樣式來源追蹤
 type StyleSource = 'registered' | 'imported' | 'manual';
@@ -23,7 +24,7 @@ type StyleManagerState = {
   allStyles: Map<string, Map<string, StyleEntry>>,
 
   //Initialize
-  setInitialBatch: (selector: string, init: Partial<Record<StyleKey, CssValue>>) => void
+  setInitialBatch: (selector: string, init: StyleProps) => void
   setProp: (selector: string, prop: StyleKey, value: CssValue) => void
 
   // 新增：CSS 導入功能
@@ -34,6 +35,8 @@ type StyleManagerState = {
 
   // 新增：清除導入的 CSS 樣式
   clearImportedCSS: () => void
+  // 新增：清除導入並回復 initial
+  resetImportedToInitial: () => void
 
   //Read (hook)
   getProp: (selector: string, prop: StyleKey) => CssValue | undefined
@@ -74,14 +77,17 @@ export const useStyleManager = createWithEqualityFn<StyleManagerState>((set, get
         });
       });
 
+      // merged baseline: old initial + new init
+      const mergedInitial = { ...(state.initial[selector] || {}), ...init } as StyleProps;
+
       return {
         initial: {
           ...state.initial,
-          [selector]: { ...(state.initial[selector] || {}), ...init }
+          [selector]: { ...(state.initial[selector] || {}), mergedInitial }
         },
         current: {
           ...state.current,
-          [selector]: { ...(state.initial[selector] || {}), ...init }
+          [selector]: { ...(state.initial[selector] || {}), mergedInitial }
         },
         styleSources: newStyleSources,
         allStyles: newAllStyles
@@ -90,41 +96,40 @@ export const useStyleManager = createWithEqualityFn<StyleManagerState>((set, get
 
   setProp: (selector, prop, value) =>
     set(state => {
-      const cur = state.current[selector] || {};
-      const ini = state.initial[selector] || {};
+      const cur = state.current[selector] || {} as StyleProps;
+      const ini = state.initial[selector] || {} as StyleProps;
 
-      // 如果沒有 initial，自動設置（方案一）
-      if (!ini[prop]) {
-        ini[prop] = value;
-      }
+      // Only set initial when the key truly doesn't exist
+      const hasInitial = Object.prototype.hasOwnProperty.call(ini, prop);
+      const nextIni = hasInitial ? ini : { ...ini, [prop]: value };
 
-      const current = { ...state.current, [selector]: { ...cur, [prop]: value } };
+      const nextCurrent = { ...state.current, [selector]: { ...cur, [prop]: value } };
 
       // 更新 allStyles 追蹤
-      const allStyles = new Map(state.allStyles);
-      if (!allStyles.has(selector)) {
-        allStyles.set(selector, new Map());
+      const nextAllStyles = new Map(state.allStyles);
+      if (!nextAllStyles.has(selector)) {
+        nextAllStyles.set(selector, new Map());
       }
 
       // 更新 styleSources，手動調整的樣式標記為 manual
-      const styleSources = { ...state.styleSources };
-      if (!styleSources[selector]) {
-        styleSources[selector] = {};
+      const nextStyleSources = { ...state.styleSources };
+      if (!nextStyleSources[selector]) {
+        nextStyleSources[selector] = {};
       }
       // 手動調整的樣式優先級最高，標記為 manual
-      styleSources[selector][prop] = 'manual';
+      nextStyleSources[selector][prop] = 'manual';
 
-      allStyles.get(selector)!.set(prop, {
+      nextAllStyles.get(selector)!.set(prop, {
         value,
         source: 'manual', // 手動調整的樣式標記為 manual
         timestamp: Date.now()
       });
 
       return {
-        current,
-        initial: { ...state.initial, [selector]: { ...ini } },
-        allStyles,
-        styleSources
+        current: nextCurrent,
+        initial: { ...state.initial, [selector]: nextIni },
+        allStyles: nextAllStyles,
+        styleSources: nextStyleSources
       };
     }),
 
@@ -266,6 +271,63 @@ export const useStyleManager = createWithEqualityFn<StyleManagerState>((set, get
       return { current, allStyles, styleSources };
     }),
 
+  // 新增：清除導入並回復 initial
+  resetImportedToInitial: () =>
+    set(state => {
+      if (typeof document !== 'undefined') {
+        const existingStyle = document.getElementById('imported-css-styles');
+        if (existingStyle) {
+          existingStyle.remove();
+        }
+      }
+
+      const current = { ...state.current };
+      const allStyles = new Map(state.allStyles);
+      const styleSources = { ...state.styleSources };
+
+      // 移除所有 imported 樣式，並回復到 initial（若有）
+      allStyles.forEach((props, selector) => {
+        const newProps = new Map();
+        props.forEach((entry, prop) => {
+          if (entry.source !== 'imported') {
+            newProps.set(prop, entry);
+          } else if (current[selector]) {
+            const initialValue = state.initial[selector]?.[prop as StyleKey];
+            if (initialValue !== undefined) {
+              current[selector] = {
+                ...current[selector],
+                [prop]: initialValue
+              };
+            } else {
+              const nextSelector = { ...(current[selector] as StyleProps) } as Record<string, CssValue>;
+              delete nextSelector[prop];
+              current[selector] = nextSelector;
+            }
+          }
+        });
+
+        if (newProps.size > 0) {
+          allStyles.set(selector, newProps);
+        } else {
+          allStyles.delete(selector);
+        }
+      });
+
+      // 清除 styleSources 中的 imported 標記
+      Object.keys(styleSources).forEach(selector => {
+        Object.keys(styleSources[selector]).forEach(prop => {
+          if (styleSources[selector][prop] === 'imported') {
+            delete styleSources[selector][prop];
+          }
+        });
+        if (Object.keys(styleSources[selector]).length === 0) {
+          delete styleSources[selector];
+        }
+      });
+
+      return { current, allStyles, styleSources };
+    }),
+
   getProp: (selector, prop) => get().current[selector]?.[prop],
   getInitial: (selector, prop) => get().initial[selector]?.[prop],
 
@@ -370,7 +432,8 @@ export function useCSSImporter() {
   const importCSS = useStyleManager(s => s.importCSS);
   const getAllStyles = useStyleManager(s => s.getAllStyles);
   const clearImportedCSS = useStyleManager(s => s.clearImportedCSS);
+  const resetImportedToInitial = useStyleManager(s => s.resetImportedToInitial);
 
-  return { importCSS, getAllStyles, clearImportedCSS };
+  return { importCSS, getAllStyles, clearImportedCSS, resetImportedToInitial };
 }
 

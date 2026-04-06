@@ -5,7 +5,7 @@ import {
   ContextMenuContent,
   ContextMenuTrigger
 } from "@/components/ui/context-menu";
-import { useStyleManager, useStyleProp } from "@/store/styles/styleManager";
+import { useStyleManager, useStyleProp } from "@/store/styleManager/styleManager";
 import Image from "next/image";
 import { useEffect } from "react";
 import {
@@ -18,31 +18,36 @@ const PlurkPost = () => {
   useEffect(() => {
     setInitialBatch(".plurk_cnt", {
       backgroundColor: "rgba(255, 255, 255, 1)",
+      backgroundImage: "none",
       border: "none",
     });
   }, [setInitialBatch]);
 
   const bgColor = useStyleProp(".plurk_cnt", "backgroundColor");
+  const bgImage = useStyleProp(".plurk_cnt", "backgroundImage");
   const border = useStyleProp(".plurk_cnt", "border");
   const nameColor = useStyleProp(".name", "color");
 
   // 檢查每個屬性的變化狀態
   const bgColorChanged = bgColor.value !== bgColor.initial;
+  const bgImageChanged = bgImage.value !== bgImage.initial;
   const borderChanged = border.value !== border.initial;
   const nameColorChanged = nameColor.value !== nameColor.initial;
 
   // 檢查是否有任何手動調整
-  const hasManualChanges = bgColorChanged || borderChanged || nameColorChanged;
+  const hasManualChanges = bgColorChanged || bgImageChanged || borderChanged || nameColorChanged;
 
   return (
     <>
       {/* 樣式邏輯 - 完全分離，傳遞詳細的變化狀態 */}
       <PlurkPostStyles
         bgColor={bgColor.value as string}
+        bgImage={bgImage.value as string}
         border={border.value as string}
         nameColor={nameColor.value as string}
         hasManualChanges={hasManualChanges}
         bgColorChanged={bgColorChanged}
+        bgImageChanged={bgImageChanged}
         borderChanged={borderChanged}
         nameColorChanged={nameColorChanged}
       />
@@ -142,7 +147,12 @@ const PlurkPost = () => {
 
         <ContextMenuContent style={{ zIndex: 1300 }}>
           <div style={{ padding: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <ColorPicker value={bgColor.value as string} onChange={(v) => bgColor.set(v)} />
+            <ColorPicker
+              value={bgColor.value as string}
+              onChange={(v) => bgColor.set(v)}
+              defaultValue={(bgColor.initial as string) || "rgba(255, 255, 255, 1)"}
+              showReset
+            />
             <BorderEditor borderValue={border.value} setChange={border.set} />
           </div>
         </ContextMenuContent>

@@ -42,8 +42,7 @@ export const UNITLESS_PROPS = new Set<StyleKey>([
 ]);
 
 /** camelCase -> kebab-case */
-export const toCssProp = (camel: string) =>
-  camel.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase());
+export const toCssProp = (camel: string) => camel.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase());
 
 /** 依屬性輸出正確 CSS 值（自動補 px / 保留 unitless） */
 export const toCssVal = (propCamel: StyleKey, value: CssValue) => {

@@ -1,25 +1,25 @@
-import { withAuth } from "next-auth/middleware"
+import { auth } from "@/auth"
+import { NextResponse } from "next/server"
 
-export default withAuth(
-  function middleware(req) {
+export default auth((req) => {
+  const isLoggedIn: boolean = !!req.auth
+  const { nextUrl } = req
 
-  },
-  {
-    callbacks: {
-      authorized: ({ token, req }) => {
-        const { pathname } = req.nextUrl
-        if (pathname.startsWith("/dashboard") || pathname.startsWith("/editor")) {
-          return !!token
-        }
-        return true
-      },
-    },
+  if (nextUrl.pathname.startsWith("/dashboard")
+    // || nextUrl.pathname.startsWith("/editor")
+  ) {
+    if (!isLoggedIn) {
+      return NextResponse.redirect(new URL("/auth/signin", nextUrl))
+    }
+    if (isLoggedIn && nextUrl.pathname === "/auth/signin") {
+      return NextResponse.redirect(new URL("/dashboard", nextUrl))
+    }
   }
-)
+  return NextResponse.next()
+})
 
 export const config = {
   matcher: [
-    "/dashboard/:path*",
-    "/editor/:path*",
+    "/((?!api|_next/static|_next/image|favicon.ico).*)"
   ],
 }

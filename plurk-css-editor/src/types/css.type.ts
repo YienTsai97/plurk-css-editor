@@ -4,6 +4,7 @@ export type CssValue = string | number | ColorResult;
 
 export type StyleKey =
   | "backgroundColor"
+  | "backgroundImage"
   | "border"
   | "color"
   | "fontSize"

@@ -46,4 +46,7 @@ next-env.d.ts
 #cursor settings
 /.cursor
 
+#Other Documentation
 cspell.json
+/src/generated/prisma
+*.md

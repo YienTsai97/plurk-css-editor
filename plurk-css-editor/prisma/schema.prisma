@@ -1,0 +1,193 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id             String          @id @default(uuid())
+  email          String          @unique
+  name           String?
+  image          String?
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  locale         String          @default("en")
+  assets         Asset[]
+  likes          Like[]
+  projects       Project[]
+  stars          Star[]
+  styleTemplates StyleTemplate[]
+
+  @@map("users")
+}
+
+model Project {
+  id                     String     @id @default(uuid())
+  name                   String
+  description            String?
+  cssContent             String     @map("css_content")
+  createdAt              DateTime   @default(now()) @map("created_at")
+  updatedAt              DateTime   @updatedAt @map("updated_at")
+  userId                 String     @map("user_id")
+  forkCount              Int        @default(0) @map("fork_count")
+  importedFromTemplateId String?    @map("imported_from_template_id")
+  likeCount              Int        @default(0) @map("like_count")
+  slug                   String     @unique
+  thumbnailUrl           String?    @map("thumbnail_url")
+  visibility             Visibility @default(PRIVATE)
+
+  importedFromTemplate StyleTemplate? @relation("ProjectTemplate", fields: [importedFromTemplateId], references: [id])
+  user                 User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectAssets        ProjectAsset[]
+
+  @@index([userId])
+  @@index([visibility])
+  @@index([slug])
+  @@map("projects")
+}
+
+model StyleTemplate {
+  id           String     @id @default(uuid())
+  name         String
+  description  String?
+  cssContent   String     @map("css_content")
+  isOfficial   Boolean    @default(false) @map("is_official")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  createdBy    String     @map("created_by")
+  forkCount    Int        @default(0) @map("fork_count")
+  likeCount    Int        @default(0) @map("like_count")
+  slug         String     @unique
+  thumbnailUrl String?    @map("thumbnail_url")
+  visibility   Visibility @default(PUBLIC)
+
+  forkedProjects      Project[]               @relation("ProjectTemplate")
+  createdByUser       User                    @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  categories          StyleTemplateCategory[]
+  styleTemplateAssets StyleTemplateAsset[]
+
+  @@index([createdBy])
+  @@index([visibility])
+  @@index([isOfficial])
+  @@index([slug])
+  @@map("style_templates")
+}
+
+model Category {
+  id             String                  @id @default(uuid())
+  name           String                  @unique
+  description    String?
+  createdAt      DateTime                @default(now()) @map("created_at")
+  updatedAt      DateTime                @updatedAt @map("updated_at")
+  styleTemplates StyleTemplateCategory[]
+
+  @@map("categories")
+}
+
+model StyleTemplateCategory {
+  id              String        @id @default(uuid())
+  categoryId      String        @map("category_id")
+  styleTemplateId String        @map("style_template_id")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  category        Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  styleTemplate   StyleTemplate @relation(fields: [styleTemplateId], references: [id], onDelete: Cascade)
+
+  @@unique([styleTemplateId, categoryId])
+  @@map("template_categories")
+}
+
+model Asset {
+  id        String          @id @default(uuid())
+  userId    String          @map("user_id")
+  provider  StorageProvider @default(SUPABASE)
+  bucket    String?
+  key       String?
+  url       String
+  size      Int?
+  mime      String
+  createdAt DateTime        @default(now()) @map("created_at")
+
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectAssets       ProjectAsset[]
+  styleTemplateAssets StyleTemplateAsset[]
+
+  @@index([userId])
+  @@map("assets")
+}
+
+model ProjectAsset {
+  id        String   @id @default(uuid())
+  projectId String   @map("project_id")
+  assetId   String   @map("asset_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  asset   Asset   @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, assetId])
+  @@index([assetId])
+  @@map("project_assets")
+}
+
+model StyleTemplateAsset {
+  id              String   @id @default(uuid())
+  styleTemplateId String   @map("style_template_id")
+  assetId         String   @map("asset_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  styleTemplate StyleTemplate @relation(fields: [styleTemplateId], references: [id], onDelete: Cascade)
+  asset         Asset         @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@unique([styleTemplateId, assetId])
+  @@index([assetId])
+  @@map("style_template_assets")
+}
+
+model Star {
+  id         String     @id @default(uuid())
+  userId     String     @map("user_id")
+  targetType TargetType
+  targetId   String     @map("target_id")
+  createdAt  DateTime   @default(now()) @map("created_at")
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, targetType, targetId])
+  @@index([targetType, targetId])
+  @@map("stars")
+}
+
+model Like {
+  id         String     @id @default(uuid())
+  userId     String     @map("user_id")
+  targetType TargetType
+  targetId   String     @map("target_id")
+  createdAt  DateTime   @default(now()) @map("created_at")
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, targetType, targetId])
+  @@index([targetType, targetId])
+  @@map("likes")
+}
+
+enum Visibility {
+  PRIVATE
+  UNLISTED
+  PUBLIC
+}
+
+enum StorageProvider {
+  SUPABASE
+  R2
+  S3
+  EXTERNAL
+}
+
+enum TargetType {
+  PROJECT
+  TEMPLATE
+}

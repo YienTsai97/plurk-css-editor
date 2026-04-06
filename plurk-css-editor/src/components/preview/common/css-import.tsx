@@ -1,13 +1,18 @@
 "use client"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useCSSImporter } from "@/store/styles/styleManager";
+import { useCSSImporter } from "@/store/styleManager/styleManager";
 import { CssValue } from "@/types/css.type";
 import { useState } from "react";
 
-export const CssImport = () => {
+type CssImportProps = {
+  layout?: "fixed" | "inline";
+};
+
+export const CssImport = ({ layout = "fixed" }: CssImportProps) => {
   const [cssInput, setCssInput] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const { importCSS, clearImportedCSS } = useCSSImporter();
+  const isInline = layout === "inline";
 
   // 清理 CSS 註解
   const cleanCSSComments = (cssString: string) => {
@@ -93,9 +98,9 @@ export const CssImport = () => {
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <button style={{
-          position: "fixed",
-          bottom: "20px",
-          right: "140px",
+          position: isInline ? "static" : "fixed",
+          bottom: isInline ? undefined : "20px",
+          right: isInline ? undefined : "140px",
           backgroundColor: "#fef123",
           padding: "8px 16px",
           border: "none",

@@ -1,6 +1,50 @@
+"use client";
+
+import { useCSSImporter } from "@/store/styleManager/styleManager";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 
 export const PlurkTopBar = () => {
+  const { getAllStyles } = useCSSImporter();
+  const [styleCount, setStyleCount] = useState(0);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+
+  useEffect(() => {
+    const updateStyleCount = () => {
+      try {
+        const { css } = getAllStyles();
+        const ruleCount = (css.match(/\}/g) || []).length;
+        setStyleCount(ruleCount);
+      } catch (error) {
+        console.error("Error counting styles:", error);
+      }
+    };
+
+    updateStyleCount();
+    const interval = setInterval(updateStyleCount, 5000);
+
+    return () => clearInterval(interval);
+  }, [getAllStyles]);
+
+  useEffect(() => {
+    const checkDraft = () => {
+      try {
+        const savedDraft = localStorage.getItem("plurk-css-editor-draft");
+        if (savedDraft) {
+          const { timestamp } = JSON.parse(savedDraft);
+          setLastSaved(new Date(timestamp));
+        }
+      } catch (error) {
+        console.error("Error checking draft:", error);
+      }
+    };
+
+    checkDraft();
+    const interval = setInterval(checkDraft, 10000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <>
       <style>
@@ -41,6 +85,16 @@ export const PlurkTopBar = () => {
 
             img {
             width:20px
+          }
+          #top-bar-editor-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 12px;
+            color: #fff;
+          }
+          #top-bar-editor-info strong {
+            font-weight: 600;
           }
         `}
       </style>
@@ -94,6 +148,18 @@ export const PlurkTopBar = () => {
               <a href="#" id="bar-notify">
                 <i className="bar-icon pif-notify"></i>
               </a>
+            </li>
+            <li id="navbar-editor-info" className="item hideMobile">
+              <div id="top-bar-editor-info">
+                <span>
+                  📝 樣式規則: <strong>{styleCount}</strong>
+                </span>
+                {lastSaved && (
+                  <span>
+                    💾 上次儲存: <strong>{lastSaved.toLocaleTimeString()}</strong>
+                  </span>
+                )}
+              </div>
             </li>
             <li id="navbar-account" className="item">
               <div id="nav-account">
