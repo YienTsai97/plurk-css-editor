@@ -1,14 +1,15 @@
 import { auth } from "@/auth";
+import { Prisma } from "@/generated/prisma";
 import { prisma } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
 // GET /api/templates/[id] - 獲取單個模板
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const templateId = params.id;
+    const { id: templateId } = await params;
 
     // 查詢模板
     const template = await prisma.styleTemplate.findUnique({
@@ -61,7 +62,7 @@ export async function GET(
 // PATCH /api/templates/[id] - 更新模板
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -73,7 +74,7 @@ export async function PATCH(
       );
     }
 
-    const templateId = params.id;
+    const { id: templateId } = await params;
     const body = await request.json();
     const { name, description, cssContent, categoryIds, visibility } = body;
 
@@ -98,7 +99,7 @@ export async function PATCH(
     }
 
     // 準備更新資料
-    const updateData: any = {};
+    const updateData: Prisma.StyleTemplateUpdateInput = {};
 
     if (name !== undefined) {
       updateData.name = name.trim();
@@ -113,7 +114,7 @@ export async function PATCH(
 
         // 檢查 slug 是否已存在
         let counter = 1;
-        let originalSlug = slug;
+        const originalSlug = slug;
         while (await prisma.styleTemplate.findFirst({
           where: {
             slug,
@@ -195,7 +196,7 @@ export async function PATCH(
 // DELETE /api/templates/[id] - 刪除模板
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -207,7 +208,7 @@ export async function DELETE(
       );
     }
 
-    const templateId = params.id;
+    const { id: templateId } = await params;
 
     // 檢查模板是否存在
     const existingTemplate = await prisma.styleTemplate.findUnique({

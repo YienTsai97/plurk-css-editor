@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 const DashboardProjectsPage = () => {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,16 +26,16 @@ const DashboardProjectsPage = () => {
       setLoading(true);
       setError(null);
 
-      const params: any = {};
+      const params: { visibility?: 'PRIVATE' | 'UNLISTED' | 'PUBLIC' } = {};
       if (visibilityFilter !== 'ALL') {
         params.visibility = visibilityFilter;
       }
 
       const result = await getUserProjects(params);
       setProjects(result.projects);
-    } catch (err) {
-      console.error('Error loading projects:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load projects');
+    } catch (error) {
+      console.error('Error loading projects:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load projects');
     } finally {
       setLoading(false);
     }
@@ -60,7 +60,7 @@ const DashboardProjectsPage = () => {
     try {
       await navigator.clipboard.writeText(project.cssContent);
       alert(`專案 "${project.name}" 的 CSS 已複製到剪貼簿！`);
-    } catch (err) {
+    } catch {
       // Fallback
       const textArea = document.createElement('textarea');
       textArea.value = project.cssContent;

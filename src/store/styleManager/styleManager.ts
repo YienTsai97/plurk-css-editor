@@ -77,17 +77,17 @@ export const useStyleManager = createWithEqualityFn<StyleManagerState>((set, get
         });
       });
 
-      // merged baseline: old initial + new init
+      // merged baseline: old initial + new init（須攤平至 selector，勿用 { mergedInitial } 簡寫成巢狀 key）
       const mergedInitial = { ...(state.initial[selector] || {}), ...init } as StyleProps;
 
       return {
         initial: {
           ...state.initial,
-          [selector]: { ...(state.initial[selector] || {}), mergedInitial }
+          [selector]: mergedInitial,
         },
         current: {
           ...state.current,
-          [selector]: { ...(state.initial[selector] || {}), mergedInitial }
+          [selector]: mergedInitial,
         },
         styleSources: newStyleSources,
         allStyles: newAllStyles
@@ -181,7 +181,10 @@ export const useStyleManager = createWithEqualityFn<StyleManagerState>((set, get
           // 修正類型問題：確保 prop 是 StyleKey 類型
           const styleKey = prop as keyof typeof current[typeof selector];
           if (current[selector]) {
-            (current[selector] as any)[styleKey] = value;
+            current[selector] = {
+              ...current[selector],
+              [styleKey]: value,
+            };
           }
 
           // 標記為導入的樣式

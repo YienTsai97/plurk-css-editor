@@ -109,7 +109,7 @@ export const checkProjectPermission = async (projectId: string): Promise<boolean
   try {
     await getProject(projectId);
     return true; // 如果能獲取到專案，說明有權限
-  } catch (error) {
+  } catch {
     return false;
   }
 };

@@ -1,8 +1,8 @@
-import type { StyleEntry, StyleManagerState } from "../types";
+import type { SliceGet, SliceSet, StyleEntry, StyleManagerState } from "../types";
 import { cssValueToString } from "../utils/cssValue";
 import { toKebabCase } from "../utils/kebab";
 
-export const createExportSlice = (set: any, get: any): Partial<StyleManagerState> => ({
+export const createExportSlice = (_set: SliceSet, get: SliceGet): Partial<StyleManagerState> => ({
   getAllStyles: () => {
     const state = get() as StyleManagerState;
     const cssOutput: string[] = [];

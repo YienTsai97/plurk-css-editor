@@ -1,7 +1,8 @@
-import type { CSSRule, StyleEntry, StyleManagerState } from "../types";
+import type { CSSRule, SliceGet, SliceSet, StyleEntry, StyleManagerState } from "../types";
 import { buildCssText } from "../utils/cssText";
 import { cssValueToString } from "../utils/cssValue";
 import { makeCssVarName } from "../utils/cssVar";
+import type { CssValue } from "@/types/css.type";
 
 const IMPORTED_STYLE_TAG_ID = "imported-css-styles";
 
@@ -59,8 +60,10 @@ function stripImportedTracking(state: StyleManagerState) {
   return { nextAllStyles, nextStyleSources, importedKeys };
 }
 
-export const createImportSlice = (set: any, get: any): Partial<StyleManagerState> => ({
-  importCSS: (cssRules: CSSRule[]) =>
+export const createImportSlice = (set: SliceSet, _get: SliceGet): Partial<StyleManagerState> => {
+  void _get;
+  return {
+    importCSS: (cssRules: CSSRule[]) =>
     set((state: StyleManagerState) => {
       // 1) DOM injection
       const cssText = buildCssText(cssRules);
@@ -83,7 +86,10 @@ export const createImportSlice = (set: any, get: any): Partial<StyleManagerState
         Object.entries(properties).forEach(([prop, value]) => {
           // NOTE: properties is Record<string, CssValue>, prop may not be StyleKey strictly
           // 你若想更嚴格：可以改 CSSRule 的 properties key 為 Partial<Record<StyleKey, CssValue>>
-          (nextCurrent[selector] as any)[prop] = value;
+          nextCurrent[selector] = {
+            ...nextCurrent[selector],
+            [prop]: value,
+          };
 
           nextStyleSources[selector][prop] = "imported";
 
@@ -108,7 +114,7 @@ export const createImportSlice = (set: any, get: any): Partial<StyleManagerState
       };
     }),
 
-  setCSSVariable: (selector: string, prop: string, value: any) =>
+  setCSSVariable: (selector: string, prop: string, value: CSSRule["properties"][string]) =>
     set((state: StyleManagerState) => {
       const varName = makeCssVarName(selector, prop);
       if (typeof document !== "undefined") {
@@ -136,7 +142,7 @@ export const createImportSlice = (set: any, get: any): Partial<StyleManagerState
         const curSel = nextCurrent[selector];
         if (!curSel) return;
 
-        const nextSel = { ...(curSel as any) };
+        const nextSel = { ...curSel } as Record<string, CssValue>;
         delete nextSel[prop];
         nextCurrent[selector] = nextSel;
       });
@@ -168,12 +174,12 @@ export const createImportSlice = (set: any, get: any): Partial<StyleManagerState
         const curSel = nextCurrent[selector];
         if (!curSel) return;
 
-        const initialVal = (state.initial[selector] as any)?.[prop];
+        const initialVal = (state.initial[selector] as Record<string, CssValue> | undefined)?.[prop];
 
         if (initialVal !== undefined) {
-          nextCurrent[selector] = { ...(curSel as any), [prop]: initialVal };
+          nextCurrent[selector] = { ...curSel, [prop]: initialVal };
         } else {
-          const nextSel = { ...(curSel as any) };
+          const nextSel = { ...curSel } as Record<string, CssValue>;
           delete nextSel[prop];
           nextCurrent[selector] = nextSel;
         }
@@ -185,4 +191,5 @@ export const createImportSlice = (set: any, get: any): Partial<StyleManagerState
         styleSources: nextStyleSources,
       };
     }),
-});
+  };
+};

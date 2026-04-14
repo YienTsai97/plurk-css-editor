@@ -1,5 +1,6 @@
 "use client";
 
+import ImageUploader from "@/components/controllers/ImageUploader";
 import { SaveProjectButton } from "@/components/editor/save-project-button";
 import { CssImport } from "@/components/preview/common/css-import";
 import { ExportButton } from "@/components/preview/common/export-button";
@@ -8,15 +9,40 @@ import { PlurkFooter } from "@/components/preview/plurk-footer";
 import { PlurkTimeline } from "@/components/preview/plurk-timeline/plurk-timeline";
 import { PlurkTimelineControl } from "@/components/preview/plurk-timeline/plurk-timeline-control";
 import { PlurkTopBar } from "@/components/preview/plurk-top-bar";
-import { useCSSImporter } from "@/store/styleManager/styleManager";
+import { BODY_STYLE_DEFAULTS } from "@/store/styleManager/defaults";
+import { useCSSImporter, useStyleManager, useStyleProp } from "@/store/styleManager/styleManager";
+import { CssValue } from "@/types/css.type";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@radix-ui/react-context-menu";
+import { useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { EditorPageStyle } from "./page.style";
 
-const EditorPage = () => {
+type ParsedCssRule = { selector: string; properties: Record<string, CssValue> };
+
+/** 將圖片網址轉成 CSS background-image 可用的值 */
+function toBackgroundImageCssValue(href: string): string {
+  const v = href.trim();
+  if (v === "" || v === "none") return "none";
+  if (v.includes('"')) {
+    return `url('${v.replace(/'/g, "\\'")}')`;
+  }
+  return `url("${v}")`;
+}
+
+const EditorPageContent = () => {
   const searchParams = useSearchParams();
+  const { status } = useSession();
+  const isLoggingIn = status === "authenticated";
   const { importCSS, getAllStyles } = useCSSImporter();
   const [isLoaded, setIsLoaded] = useState(false);
   const [isActionDockOpen, setIsActionDockOpen] = useState(false);
+  const [backgroundDialogOpen, setBackgroundDialogOpen] = useState(false);
 
   // 處理 URL 匯入
   useEffect(() => {
@@ -45,9 +71,8 @@ const EditorPage = () => {
   }, [searchParams, importCSS]);
 
   // 解析 CSS 字串
-  const parseCSS = (cssString: string) => {
-    const rules: Array<{ selector: string; properties: Record<string, any> }> =
-      [];
+  const parseCSS = (cssString: string): ParsedCssRule[] => {
+    const rules: ParsedCssRule[] = [];
 
     // 移除註解
     const cleanCSS = cssString.replace(/\/\*[\s\S]*?\*\//g, "");
@@ -62,7 +87,7 @@ const EditorPage = () => {
         const selector = selectorMatch[1].trim();
         const propertiesText = propertiesMatch[1];
 
-        const properties: Record<string, any> = {};
+        const properties: Record<string, CssValue> = {};
         const propertyPairs = propertiesText
           .split(";")
           .filter((pair) => pair.trim());
@@ -91,7 +116,7 @@ const EditorPage = () => {
     try {
       const savedDraft = localStorage.getItem("plurk-css-editor-draft");
       if (savedDraft) {
-        const { css, timestamp } = JSON.parse(savedDraft);
+        const { css } = JSON.parse(savedDraft);
         const cssRules = parseCSS(css);
         importCSS(cssRules);
         console.log(
@@ -139,65 +164,82 @@ const EditorPage = () => {
     };
   }, [isLoaded, getAllStyles]);
 
+  const setInitialBatch = useStyleManager(s => s.setInitialBatch);
+  useEffect(() => {
+    setInitialBatch("body", BODY_STYLE_DEFAULTS);
+  }, [setInitialBatch]);
+
+  const backgroundImage = useStyleProp("body", "backgroundImage");
+  const backgroundSize = useStyleProp("body", "backgroundSize");
+  const backgroundRepeat = useStyleProp("body", "backgroundRepeat");
+  const backgroundPosition = useStyleProp("body", "backgroundPosition");
+  const backgroundAttachment = useStyleProp("body", "backgroundAttachment");
+
+  const backgroundImageChanged =
+    backgroundImage.value !== backgroundImage.initial &&
+    backgroundImage.value !== "none";
+  const backgroundSizeChanged =
+    backgroundSize.value !== backgroundSize.initial;
+  const backgroundRepeatChanged =
+    backgroundRepeat.value !== backgroundRepeat.initial;
   return (
     <>
-      <style>
-        {`
-          body {
-            background: #eeebf0;
-            color: #333;
-            /*以下為新添背景圖片設定，可自行修改*/
-             background-image: url("https://static.vecteezy.com/system/resources/thumbnails/049/855/471/small/nature-background-high-resolution-wallpaper-for-a-serene-and-stunning-view-free-photo.jpg") !important;
-            background-size: cover;        /* 強制滿版*/
-            background-position: center;   /* 置中裁切 */
-            background-repeat: no-repeat;
-            background-attachment: fixed;  /* 可選：滾動時背景不動 */
-          }
-          body.language-large-font {
-            font-size: 13px;
-          }
-          body, #layout_content_html, #layout_content {
-            overflow-x: hidden;
-          }
-          body {
-            overflow-y: scroll;
-          }
-          body, div, dl, dt, dd, ul, ol, li, h1, h2, h3, h4, h5, h6, pre, code, form, fieldset, legend, input, textarea, p, blockquote, th, td {
-            margin: 0;
-            padding: 0;
-          }
-          body.language-large-font {
-            font-size: 13px;
-          }
-          #layout_content {
-            padding-top: 42px;
-            position: relative;
-          }
-          .clearfix {
-            clear: both;
-          }
-          .clearfix::after {
-            content: '';
-            clear: both;
-            width: 0px;
-            height: 0px;
-            display: block;
-            line-height: 0px;
-            font-size: 0px;
-          }
-          i {
-            font-style: normal;
-          }
+      <EditorPageStyle
+        backgroundImage={backgroundImage.value as CssValue}
+        backgroundSize={backgroundSize.value as CssValue}
+        backgroundRepeat={backgroundRepeat.value as CssValue}
+        backgroundPosition={backgroundPosition.value as CssValue}
+        backgroundAttachment={backgroundAttachment.value as CssValue}
+        backgroundImageChanged={backgroundImageChanged}
+        backgroundSizeChanged={backgroundSizeChanged}
+        backgroundRepeatChanged={backgroundRepeatChanged}
+      />
 
-        `}
-      </style>
+      <ImageUploader
+        showTrigger={false}
+        open={backgroundDialogOpen}
+        onOpenChange={setBackgroundDialogOpen}
+        isLoggingIn={isLoggingIn}
+        onUploadedUrl={(url) => {
+          const v = toBackgroundImageCssValue(url);
+          backgroundImage.set(v);
+          backgroundSize.set(BODY_STYLE_DEFAULTS.backgroundSize);
+          backgroundRepeat.set(BODY_STYLE_DEFAULTS.backgroundRepeat);
+        }}
+        onResetBackground={() => {
+          backgroundImage.set(backgroundImage.initial ?? BODY_STYLE_DEFAULTS.backgroundImage);
+          backgroundSize.set(backgroundSize.initial ?? BODY_STYLE_DEFAULTS.backgroundSize);
+          backgroundRepeat.set(backgroundRepeat.initial ?? BODY_STYLE_DEFAULTS.backgroundRepeat);
+        }}
+      />
 
       <div id="layout_body">
         <PlurkTopBar />
         <div id="layout_content_html" className="_lch_">
           <div id="layout_content" className="_lc_ clearfix">
-            <PlurkTimeline />
-            <PlurkTimelineControl />
+            <ContextMenu>
+              <ContextMenuTrigger>
+                <PlurkTimeline />
+                <PlurkTimelineControl />
+              </ContextMenuTrigger>
+              <ContextMenuContent style={{ zIndex: 1300, minWidth: 200, padding: 4 }}>
+                <ContextMenuItem
+                  style={{
+                    padding: "8px 12px",
+                    fontSize: 13,
+                    borderRadius: 6,
+                    cursor: "pointer",
+                    outline: "none",
+                    backgroundColor: "#ffffff",
+                    color: "#374151",
+                    border: "1px solid #e5e7eb",
+                  }}
+                  onSelect={() => setBackgroundDialogOpen(true)}
+                >
+                  更換背景圖
+                </ContextMenuItem>
+              </ContextMenuContent>
+            </ContextMenu>
             <PlurkDashboard />
             <PlurkFooter />
             {/* toggle button group */}
@@ -248,10 +290,31 @@ const EditorPage = () => {
               )}
             </div>
           </div>
-        </div>
-      </div>
+        </div >
+      </div >
     </>
   );
 };
 
-export default EditorPage;
+export default function EditorPage() {
+  return (
+    <Suspense
+      fallback={
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: "100vh",
+            fontSize: "16px",
+            color: "#666",
+          }}
+        >
+          載入編輯器…
+        </div>
+      }
+    >
+      <EditorPageContent />
+    </Suspense>
+  );
+}

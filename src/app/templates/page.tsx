@@ -12,7 +12,7 @@ const TemplatesPage = () => {
   const [officialTemplates, setOfficialTemplates] = useState<StyleTemplateType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedCategory] = useState<string>('all');
 
   useEffect(() => {
     loadTemplates();
@@ -24,16 +24,16 @@ const TemplatesPage = () => {
       setLoading(true);
       setError(null);
 
-      const params: any = { visibility: 'PUBLIC' };
+      const params: { visibility: 'PUBLIC'; categoryId?: string } = { visibility: 'PUBLIC' };
       if (selectedCategory !== 'all') {
         params.categoryId = selectedCategory;
       }
 
       const result = await getTemplates(params);
       setTemplates(result.templates);
-    } catch (err) {
-      console.error('Error loading templates:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load templates');
+    } catch (error) {
+      console.error('Error loading templates:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load templates');
     } finally {
       setLoading(false);
     }
@@ -63,7 +63,7 @@ const TemplatesPage = () => {
     try {
       await navigator.clipboard.writeText(template.cssContent);
       alert(`模板 "${template.name}" 的 CSS 已複製到剪貼簿！`);
-    } catch (err) {
+    } catch {
       // Fallback
       const textArea = document.createElement('textarea');
       textArea.value = template.cssContent;

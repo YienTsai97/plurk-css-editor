@@ -5,6 +5,10 @@ export type CssValue = string | number | ColorResult;
 export type StyleKey =
   | "backgroundColor"
   | "backgroundImage"
+  | "backgroundSize"
+  | "backgroundRepeat"
+  | "backgroundPosition"
+  | "backgroundAttachment"
   | "border"
   | "color"
   | "fontSize"

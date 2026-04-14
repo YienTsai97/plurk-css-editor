@@ -145,7 +145,7 @@ export const ExportButton = ({ layout = "fixed" }: ExportButtonProps) => {
                 name="exportFormat"
                 value="copy"
                 checked={exportFormat === 'copy'}
-                onChange={(e) => setExportFormat(e.target.value as any)}
+                onChange={() => setExportFormat('copy')}
               />
               <span>📋 複製到剪貼簿</span>
             </label>
@@ -156,7 +156,7 @@ export const ExportButton = ({ layout = "fixed" }: ExportButtonProps) => {
                 name="exportFormat"
                 value="download"
                 checked={exportFormat === 'download'}
-                onChange={(e) => setExportFormat(e.target.value as any)}
+                onChange={() => setExportFormat('download')}
               />
               <span>💾 下載 .css 檔案</span>
             </label>
@@ -167,7 +167,7 @@ export const ExportButton = ({ layout = "fixed" }: ExportButtonProps) => {
                 name="exportFormat"
                 value="share"
                 checked={exportFormat === 'share'}
-                onChange={(e) => setExportFormat(e.target.value as any)}
+                onChange={() => setExportFormat('share')}
               />
               <span>🔗 生成分享連結</span>
             </label>

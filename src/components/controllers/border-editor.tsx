@@ -111,24 +111,6 @@ const BorderEditor = ({ borderValue, setChange }: Prop) => {
     }
   }, [composed, borderValue, setChange]);
 
-  const apply = () => {
-    if (composed) {
-      const result = normalizeBorder(composed);
-      if (result.ok) {
-        setChange(result.value);
-      } else {
-        // 如果驗證失敗，設為 none
-        setChange("none");
-        // 重置內部狀態
-        setWidth("0");
-        setUnit("px");
-        setStyle("");
-        setColor("rgba(0, 0, 0, 0)");
-        console.log(`Oops! ${result.errors} :(`)
-      }
-    }
-  };
-
   const resetToNone = () => {
     setWidth("0");
     setUnit("px");

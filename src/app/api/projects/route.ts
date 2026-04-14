@@ -1,6 +1,11 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
+import { Prisma } from "@/generated/prisma";
 import { NextRequest, NextResponse } from "next/server";
+
+type Visibility = "PRIVATE" | "UNLISTED" | "PUBLIC";
+const isVisibility = (value: string): value is Visibility =>
+  value === "PRIVATE" || value === "UNLISTED" || value === "PUBLIC";
 
 // GET /api/projects - 獲取用戶的專案列表
 export async function GET(request: NextRequest) {
@@ -21,11 +26,11 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit;
 
     // 構建查詢條件
-    const where: any = {
+    const where: Prisma.ProjectWhereInput = {
       userId: session.user.id
     };
 
-    if (visibility && ['PRIVATE', 'UNLISTED', 'PUBLIC'].includes(visibility)) {
+    if (visibility && isVisibility(visibility)) {
       where.visibility = visibility;
     }
 
@@ -37,10 +42,14 @@ export async function GET(request: NextRequest) {
         skip: offset,
         take: limit,
         include: {
-          assets: {
-            select: {
-              id: true,
-              url: true
+          projectAssets: {
+            include: {
+              asset: {
+                select: {
+                  id: true,
+                  url: true
+                }
+              }
             }
           }
         }
@@ -48,10 +57,15 @@ export async function GET(request: NextRequest) {
       prisma.project.count({ where })
     ]);
 
+    const projectsWithAssets = projects.map((project) => ({
+      ...project,
+      assets: project.projectAssets.map((projectAsset) => projectAsset.asset),
+    }));
+
     return NextResponse.json({
       success: true,
       data: {
-        projects,
+        projects: projectsWithAssets,
         pagination: {
           page,
           limit,
@@ -102,7 +116,7 @@ export async function POST(request: NextRequest) {
 
     // 檢查 slug 是否已存在
     let counter = 1;
-    let originalSlug = slug;
+    const originalSlug = slug;
     while (await prisma.project.findFirst({ where: { slug, userId: session.user.id } })) {
       slug = `${originalSlug}-${counter}`;
       counter++;
@@ -121,18 +135,27 @@ export async function POST(request: NextRequest) {
         userId: session.user.id
       },
       include: {
-        assets: {
-          select: {
-            id: true,
-            url: true
+        projectAssets: {
+          include: {
+            asset: {
+              select: {
+                id: true,
+                url: true
+              }
+            }
           }
         }
       }
     });
 
+    const projectWithAssets = {
+      ...project,
+      assets: project.projectAssets.map((projectAsset) => projectAsset.asset),
+    };
+
     return NextResponse.json({
       success: true,
-      data: project
+      data: projectWithAssets
     }, { status: 201 });
 
   } catch (error) {

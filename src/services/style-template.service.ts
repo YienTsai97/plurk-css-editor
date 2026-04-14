@@ -141,19 +141,6 @@ export const updateStyleTemplate = async (id: string, data: UpdateStyleTemplate)
   }
 }
 
-//Delete style template
-const deleteStyleTemplate = async (id: string): Promise<ApiResponse<StyleTemplateType>> => {
-  try {
-    const deleteStyleTemplate = await prisma.styleTemplate.delete({
-      where: { id }
-    })
-    return { success: true, data: deleteStyleTemplate };
-  } catch (error) {
-    console.error("Error deleting style template:", error)
-    return { success: false, error }
-  }
-}
-
 //Get official style templates
 export const getOfficialStyleTemplates = async (): Promise<ApiResponse<StyleTemplateWithoutCss[]>> => {
   try {

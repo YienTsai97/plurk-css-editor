@@ -1,24 +1,29 @@
 import { auth } from "@/auth";
+import { Prisma } from "@/generated/prisma";
 import { prisma } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
 // GET /api/projects/[id] - 獲取單個專案
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
-    const projectId = params.id;
+    const { id: projectId } = await params;
 
     // 查詢專案
     const project = await prisma.project.findUnique({
       where: { id: projectId },
       include: {
-        assets: {
-          select: {
-            id: true,
-            url: true,
+        projectAssets: {
+          include: {
+            asset: {
+              select: {
+                id: true,
+                url: true,
+              }
+            }
           }
         },
         importedFromTemplate: {
@@ -46,9 +51,14 @@ export async function GET(
       );
     }
 
+    const projectWithAssets = {
+      ...project,
+      assets: project.projectAssets.map((projectAsset) => projectAsset.asset),
+    };
+
     return NextResponse.json({
       success: true,
-      data: project
+      data: projectWithAssets
     });
 
   } catch (error) {
@@ -63,7 +73,7 @@ export async function GET(
 // PATCH /api/projects/[id] - 更新專案
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -75,7 +85,7 @@ export async function PATCH(
       );
     }
 
-    const projectId = params.id;
+    const { id: projectId } = await params;
     const body = await request.json();
     const { name, description, cssContent, visibility, thumbnailUrl } = body;
 
@@ -100,7 +110,7 @@ export async function PATCH(
     }
 
     // 準備更新資料
-    const updateData: any = {};
+    const updateData: Prisma.ProjectUpdateInput = {};
 
     if (name !== undefined) {
       updateData.name = name.trim();
@@ -115,7 +125,7 @@ export async function PATCH(
 
         // 檢查 slug 是否已存在
         let counter = 1;
-        let originalSlug = slug;
+        const originalSlug = slug;
         while (await prisma.project.findFirst({
           where: {
             slug,
@@ -152,18 +162,27 @@ export async function PATCH(
       where: { id: projectId },
       data: updateData,
       include: {
-        assets: {
-          select: {
-            id: true,
-            url: true,
+        projectAssets: {
+          include: {
+            asset: {
+              select: {
+                id: true,
+                url: true,
+              }
+            }
           }
         }
       }
     });
 
+    const updatedProjectWithAssets = {
+      ...updatedProject,
+      assets: updatedProject.projectAssets.map((projectAsset) => projectAsset.asset),
+    };
+
     return NextResponse.json({
       success: true,
-      data: updatedProject
+      data: updatedProjectWithAssets
     });
 
   } catch (error) {
@@ -186,7 +205,7 @@ export async function PATCH(
 // DELETE /api/projects/[id] - 刪除專案
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth();
@@ -198,7 +217,7 @@ export async function DELETE(
       );
     }
 
-    const projectId = params.id;
+    const { id: projectId } = await params;
 
     // 檢查專案是否存在
     const existingProject = await prisma.project.findUnique({
