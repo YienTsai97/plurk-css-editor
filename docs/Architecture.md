@@ -113,12 +113,15 @@ components/
 │
 ├── editor/               # 編輯器專屬
 │   ├── public-editor-header   # 公開編輯器頂部（Flow A）
+│   ├── editor-context-menu    # 編輯器右鍵選單共用外殼與 row/section 元件
 │   └── save-project-button    # 儲存 / 建立專案按鈕
 │
 ├── preview/              # Plurk 模擬預覽元件
 │   ├── plurk-top-bar          # 導覽列
 │   ├── plurk-dashboard/       # 個人頁（左側資訊 + 右側統計）
 │   ├── plurk-timeline/        # 時間軸（控制列 + 貼文列表）
+│   │   ├── response-count/     # 回應數徽章 feature module（selector/menu/styles/default）
+│   │   └── timeline-background/# 河道/body 背景 feature module（menu/styles/ImageUploader wrapper）
 │   ├── plurk-post/            # 單則貼文（含 styles + manager actions）
 │   │   ├── manager/
 │   │   │   ├── icon-state.type        # manager icon 共用型別（on/off + onToggle）
@@ -126,8 +129,10 @@ components/
 │   │   │   ├── like-icon              # 愛心圖示元件（含顯示數字）
 │   │   │   ├── replurk-icon           # 轉噗圖示元件（含顯示數字）
 │   │   │   └── use-manager-icon-toggle # icon toggle + count state hook
+│   │   ├── plurk-post-appearance/     # 貼文外觀 feature module（.plurk_cnt / .name）
+│   │   ├── plurk-post-context-menu-content # 貼文右鍵選單組裝器
 │   │   ├── plurk-post.types           # PostData / PostThread 型別
-│   │   ├── plurk-post.styles          # 主貼文 / manager / response-box 樣式
+│   │   ├── plurk-post.styles          # 主貼文 / manager / response-box 固定預覽樣式
 │   │   ├── plurk-response-box         # 展開回應區塊元件
 │   │   └── plurk-post                 # 單則貼文主體
 │   ├── plurk-footer           # 頁尾
@@ -180,7 +185,38 @@ type StyleManagerState = {
 - `useStyleProp` hook 訂閱單一屬性，避免全域更新
 - CSS Variables 直接操作 `document.documentElement`，跳過 React 渲染週期
 
-### 4.4 Plurk Post manager 行為（新增）
+### 4.4 Style Feature Module（新增）
+
+為了支援後續更複雜的 CSS target 編輯，預覽區的可編輯樣式逐步改成 feature module 管理。
+
+**核心原則：**
+
+- `constants`：集中 selector 與可編輯屬性規格。
+- `menu`：負責右鍵選單 UI，透過 `useStyleProp()` 讀寫 StyleManager。
+- `styles`：常駐註冊 defaults，並輸出高權重預覽 CSS。
+- `wrapper`：只有在 feature 需要長期 UI state 時使用，例如河道背景的 `ImageUploader` dialog。
+
+**目前已拆分：**
+
+| Feature | 位置 | 實際 selector | 說明 |
+| --- | --- | --- | --- |
+| 貼文外觀 | `src/components/preview/plurk-post/plurk-post-appearance/` | `.plurk_cnt`, `.name` | 貼文背景色、背景圖、邊框、暱稱色預覽覆寫 |
+| 河道背景 | `src/components/preview/plurk-timeline/timeline-background/` | `body` | UI 顯示為河道背景；為相容既有草稿與匯出仍使用 `body` |
+| 回應數徽章 | `src/components/preview/plurk-timeline/response-count/` | `.timeline-cnt .response_count`, `.timeline-cnt .new .response_count` | 已讀/未讀徽章顏色與共通圓角 |
+
+**資料流：**
+
+```
+FeatureMenu
+  → useStyleProp(selector, prop).set(value)
+  → StyleManager current/allStyles
+  → FeatureStyles 產生預覽 CSS
+  → getAllStyles() 匯出 CSS
+```
+
+父層元件只負責掛載 feature，不再直接知道每個 selector 的細節。例如 `/editor` 只掛 `TimelineBackground`，`PlurkPost` 只掛 `PlurkPostAppearanceStyles`。
+
+### 4.5 Plurk Post manager 行為（新增）
 
 `plurk-post` 內的 manager 操作列已拆分為 icon 元件 + hook，避免 `plurk-post.tsx` 過度膨脹。
 

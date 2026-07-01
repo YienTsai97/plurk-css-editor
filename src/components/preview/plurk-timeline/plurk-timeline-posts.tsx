@@ -172,11 +172,15 @@ const postSlots: PostSlot[] = [
   {
     id: "whisper",
     data: whisperPost,
+    // 用途：示範未讀回應數徽章，讓 `.timeline-cnt .new .response_count` 可直接預覽。
+    className: "new",
     position: { left: "300px", top: "10%" },
   },
   {
     id: "normal",
     data: normalPost,
+    // 用途：示範未讀回應數徽章，並保留正常噗與回覆串互動測試。
+    className: "new",
     position: { left: "750px", top: "5%" },
   },
   {

@@ -15,6 +15,62 @@ type StyleEntry = {
   timestamp: number;
 }
 
+const RESPONSE_COUNT_EXPORT_SELECTOR = ".timeline-cnt .response_count";
+const RESPONSE_COUNT_NEW_EXPORT_SELECTOR = ".timeline-cnt .new .response_count";
+
+const toCssPropName = (prop: string) => prop.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase());
+
+const getSourceTag = (prop: string, source: StyleSource) => {
+  if (source === "imported") return `[IMPORTED] ${prop}`;
+  if (source === "manual") return `[MANUAL] ${prop}`;
+  return null;
+};
+
+const formatCssBlock = (
+  selector: string,
+  props: Map<string, StyleEntry>,
+  extraTags: string[] = [],
+) => {
+  const lines: string[] = [];
+  const propTags: string[] = [...extraTags];
+  const sortedProps = Array.from(props.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+
+  sortedProps.forEach(([prop, entry]) => {
+    lines.push(`  ${toCssPropName(prop)}: ${entry.value};`);
+
+    const sourceTag = getSourceTag(prop, entry.source);
+    if (sourceTag) {
+      propTags.push(sourceTag);
+    }
+  });
+
+  if (lines.length === 0) return null;
+
+  const body = `${selector} {\n${lines.join("\n")}\n}`;
+  return propTags.length > 0 ? `/* ${propTags.join(" ")} */\n${body}` : body;
+};
+
+const buildCurrentStyleEntries = (
+  currentProps: StyleProps | undefined,
+  sourceProps: Map<string, StyleEntry> | undefined,
+) => {
+  const entries = new Map<string, StyleEntry>();
+  if (!currentProps) return entries;
+
+  Object.entries(currentProps).forEach(([prop, value]) => {
+    if (value === undefined) return;
+
+    const sourceEntry = sourceProps?.get(prop);
+    entries.set(prop, {
+      value,
+      source: sourceEntry?.source ?? "registered",
+      timestamp: sourceEntry?.timestamp ?? 0,
+    });
+  });
+
+  return entries;
+};
+
 type StyleManagerState = {
   current: StyleDict,
   initial: StyleDict,
@@ -369,41 +425,46 @@ export const useStyleManager = createWithEqualityFn<StyleManagerState>((set, get
       selectorGroups.get(selector)!.set(prop, entry);
     });
 
+    const responseCountProps = selectorGroups.get(RESPONSE_COUNT_EXPORT_SELECTOR);
+    const responseCountNewProps = selectorGroups.get(RESPONSE_COUNT_NEW_EXPORT_SELECTOR);
+    const handledSelectors = new Set<string>();
+
+    if (responseCountProps || responseCountNewProps) {
+      const currentResponseCountProps = buildCurrentStyleEntries(
+        state.current[RESPONSE_COUNT_EXPORT_SELECTOR],
+        responseCountProps,
+      );
+      const resetBlock = formatCssBlock(
+        RESPONSE_COUNT_EXPORT_SELECTOR,
+        currentResponseCountProps,
+        ["[RESPONSE_COUNT_RESET]"],
+      );
+      const commonBlock = formatCssBlock(RESPONSE_COUNT_EXPORT_SELECTOR, currentResponseCountProps);
+      const newBlock = responseCountNewProps
+        ? formatCssBlock(RESPONSE_COUNT_NEW_EXPORT_SELECTOR, responseCountNewProps)
+        : null;
+
+      if (resetBlock) cssOutput.push(resetBlock);
+      if (commonBlock) cssOutput.push(commonBlock);
+      if (newBlock) cssOutput.push(newBlock);
+
+      handledSelectors.add(RESPONSE_COUNT_EXPORT_SELECTOR);
+      handledSelectors.add(RESPONSE_COUNT_NEW_EXPORT_SELECTOR);
+    }
+
     // 生成 CSS 和 tags
     selectorGroups.forEach((props, selector) => {
-      const lines: string[] = [];
-      const propTags: string[] = [];
+      if (handledSelectors.has(selector)) return;
 
-      // 按屬性名稱排序，確保輸出一致
-      const sortedProps = Array.from(props.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-
-      sortedProps.forEach(([prop, entry]) => {
-        const cssProp = prop.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase());
-        lines.push(`  ${cssProp}: ${entry.value};`);
-
-        // 只添加 IMPORTED 和 MANUAL 標記，不顯示 REGISTERED
-        if (entry.source === 'imported') {
-          propTags.push(`[IMPORTED] ${prop}`);
-        } else if (entry.source === 'manual') {
-          propTags.push(`[MANUAL] ${prop}`);
-        }
-        // 移除 REGISTERED 標記的顯示
-      });
-
-      if (lines.length > 0) {
-        // 合併 tag 註釋到一行
-        if (propTags.length > 0) {
-          cssOutput.push(`/* ${propTags.join(' ')} */\n${selector} {\n${lines.join('\n')}\n}`);
-        } else {
-          cssOutput.push(`${selector} {\n${lines.join('\n')}\n}`);
-        }
-      }
+      const block = formatCssBlock(selector, props);
+      if (block) cssOutput.push(block);
     });
 
     // 生成說明 tags
     tags.push('/* ===== CSS EXPORT TAGS ===== */');
     tags.push('/* [MANUAL] - 用戶手動調整的樣式（最高優先級） */');
     tags.push('/* [IMPORTED] - 從外部 CSS 導入的樣式（中等優先級） */');
+    tags.push('/* [RESPONSE_COUNT_RESET] - 回應數徽章匯出特例：先輸出 reset block 穩定 Plurk 實站覆蓋順序 */');
     tags.push('/* 注意：相同屬性的後續值會覆蓋前面的值 */');
     tags.push('/* ======================== */');
 

@@ -2,12 +2,17 @@
 import { CssValue } from "@/types/css.type";
 import { normalizeBorder } from "@/utils/border";
 import * as Popover from "@radix-ui/react-popover";
+import type { CSSProperties, ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import ColorPicker from "./color-picker";
 
 type Prop = {
   borderValue: CssValue | undefined;
   setChange: (v: CssValue) => void;
+  /** 用途：讓 context menu 可傳入整排 trigger；未傳時維持原本的 Set Border 按鈕。 */
+  trigger?: ReactNode;
+  triggerStyle?: CSSProperties;
+  triggerClassName?: string;
 }
 
 // 解析邊框字串，分離數值和單位
@@ -22,7 +27,13 @@ const parseBorderValue = (input: string) => {
   return { value: 0, unit: 'px' };
 };
 
-const BorderEditor = ({ borderValue, setChange }: Prop) => {
+const BorderEditor = ({
+  borderValue,
+  setChange,
+  trigger = "Set Border",
+  triggerStyle,
+  triggerClassName,
+}: Prop) => {
   const [width, setWidth] = useState<string>("");
   const [style, setStyle] = useState<string>("");
   const [color, setColor] = useState<string>("rgba(0, 0, 0, 1)");
@@ -122,8 +133,13 @@ const BorderEditor = ({ borderValue, setChange }: Prop) => {
   return (
     <Popover.Root>
       <Popover.Trigger asChild>
-        <button type="button" style={{ fontSize: '12px', color: '#666' }}>
-          Set Border
+        {/* 用途：trigger 可被 editor menu 替換成整排可點列，同時保留 Popover 行為。 */}
+        <button
+          type="button"
+          className={triggerClassName}
+          style={{ fontSize: '12px', color: '#666', ...triggerStyle }}
+        >
+          {trigger}
         </button>
       </Popover.Trigger>
       <Popover.Content

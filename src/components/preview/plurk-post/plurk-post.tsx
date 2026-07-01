@@ -1,15 +1,9 @@
-import BorderEditor from "@/components/controllers/border-editor";
-import ColorPicker from "@/components/controllers/color-picker";
 import {
   ContextMenu,
-  ContextMenuContent,
   ContextMenuTrigger
 } from "@/components/ui/context-menu";
-import { PLURK_POST_STYLE_DEFAULTS } from "@/store/styleManager/defaults";
-import { useStyleManager, useStyleProp } from "@/store/styleManager/styleManager";
-import { cssValueToString } from "@/store/styleManager/utils/cssValue";
+import { EditorMenuContent } from "@/components/editor/editor-context-menu";
 import Image from "next/image";
-import { useEffect } from "react";
 import { PlurkManagerLikeIcon } from "./manager/like-icon";
 import { PlurkManagerMuteIcon } from "./manager/mute-icon";
 import PlurkManagerReplurkIcon from "./manager/replurk-icon";
@@ -17,9 +11,10 @@ import {
   useManagerIconToggle,
   useManagerIconToggleWithCount,
 } from "./manager/use-manager-icon-toggle";
+import { PlurkPostAppearanceStyles } from "./plurk-post-appearance/plurk-post-appearance-styles";
+import { PlurkPostContextMenuContent } from "./plurk-post-context-menu-content";
 import { PlurkPostStyles } from "./plurk-post.styles";
 import type { PlurkPostProps } from "./plurk-post.types";
-
 export type { ManagerIconState } from "./manager/icon-state.type";
 export type {
   PlurkPostPreviewStyleProps,
@@ -31,28 +26,6 @@ export type {
 } from "./plurk-post.types";
 
 const PlurkPost = ({ data, skipStyles = false }: PlurkPostProps) => {
-  const setInitialBatch = useStyleManager(s => s.setInitialBatch);
-
-  useEffect(() => {
-    setInitialBatch(".plurk_cnt", PLURK_POST_STYLE_DEFAULTS);
-  }, [setInitialBatch]);
-
-  const bgColor = useStyleProp(".plurk_cnt", "backgroundColor");
-  const bgImage = useStyleProp(".plurk_cnt", "backgroundImage");
-  const border = useStyleProp(".plurk_cnt", "border");
-  const nameColor = useStyleProp(".name", "color");
-
-  // 檢查每個屬性的變化狀態
-  const bgColorChanged = bgColor.value !== bgColor.initial;
-  const bgImageChanged = bgImage.value !== bgImage.initial;
-  const borderChanged = border.value !== border.initial;
-  const nameColorChanged = nameColor.value !== nameColor.initial;
-  const bgColorValue = cssValueToString(bgColor.value) || PLURK_POST_STYLE_DEFAULTS.backgroundColor;
-  const bgColorDefaultValue =
-    cssValueToString(bgColor.initial) || PLURK_POST_STYLE_DEFAULTS.backgroundColor;
-
-  const hasManualChanges = bgColorChanged || bgImageChanged || borderChanged || nameColorChanged;
-
   const mute = useManagerIconToggle(data.pid, data.muteState)
   const like = useManagerIconToggleWithCount(data.pid, data.likeState, data.likeCount)
   const replurk = useManagerIconToggleWithCount(data.pid, data.replurkState, data.replurkCount)
@@ -60,17 +33,10 @@ const PlurkPost = ({ data, skipStyles = false }: PlurkPostProps) => {
   return (
     <>
       {!skipStyles && (
-        <PlurkPostStyles
-          backgroundColor={bgColor.value as string}
-          backgroundImage={bgImage.value as string}
-          border={border.value as string}
-          color={nameColor.value as string}
-          hasManualChanges={hasManualChanges}
-          backgroundColorChanged={bgColorChanged}
-          backgroundImageChanged={bgImageChanged}
-          borderChanged={borderChanged}
-          colorChanged={nameColorChanged}
-        />
+        <>
+          <PlurkPostStyles />
+          <PlurkPostAppearanceStyles />
+        </>
       )}
 
       <div className={mute.isOn ? "muted" : undefined}>
@@ -192,17 +158,10 @@ const PlurkPost = ({ data, skipStyles = false }: PlurkPostProps) => {
             </table>
           </ContextMenuTrigger>
 
-          <ContextMenuContent style={{ zIndex: 1300 }}>
-            <div style={{ padding: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <ColorPicker
-                value={bgColorValue}
-                onChange={(v) => bgColor.set(v)}
-                defaultValue={bgColorDefaultValue}
-                showReset
-              />
-              <BorderEditor borderValue={border.value} setChange={border.set} />
-            </div>
-          </ContextMenuContent>
+          {/* 用途：貼文右鍵選單外殼；內容拆到 PlurkPostContextMenuContent，避免預覽 markup 混入控制器 UI。 */}
+          <EditorMenuContent>
+            <PlurkPostContextMenuContent />
+          </EditorMenuContent>
         </ContextMenu>
       </div>
     </>

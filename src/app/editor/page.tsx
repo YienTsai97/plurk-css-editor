@@ -1,6 +1,5 @@
 "use client";
 
-import ImageUploader from "@/components/controllers/ImageUploader";
 import { SaveProjectButton } from "@/components/editor/save-project-button";
 import { CssImport } from "@/components/preview/common/css-import";
 import { ExportButton } from "@/components/preview/common/export-button";
@@ -8,32 +7,16 @@ import { PlurkDashboard } from "@/components/preview/plurk-dashboard/plurk-dashb
 import { PlurkFooter } from "@/components/preview/plurk-footer";
 import { PlurkTimeline } from "@/components/preview/plurk-timeline/plurk-timeline";
 import { PlurkTimelineControl } from "@/components/preview/plurk-timeline/plurk-timeline-control";
+import { ResponseCountStyles } from "@/components/preview/plurk-timeline/response-count/response-count-styles";
+import { TimelineBackground } from "@/components/preview/plurk-timeline/timeline-background/timeline-background";
 import { PlurkTopBar } from "@/components/preview/plurk-top-bar";
-import { BODY_STYLE_DEFAULTS } from "@/store/styleManager/defaults";
-import { useCSSImporter, useStyleManager, useStyleProp } from "@/store/styleManager/styleManager";
+import { useCSSImporter } from "@/store/styleManager/styleManager";
 import { CssValue } from "@/types/css.type";
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger,
-} from "@radix-ui/react-context-menu";
 import { useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { EditorPageStyle } from "./page.style";
 
 type ParsedCssRule = { selector: string; properties: Record<string, CssValue> };
-
-/** 將圖片網址轉成 CSS background-image 可用的值 */
-function toBackgroundImageCssValue(href: string): string {
-  const v = href.trim();
-  if (v === "" || v === "none") return "none";
-  if (v.includes('"')) {
-    return `url('${v.replace(/'/g, "\\'")}')`;
-  }
-  return `url("${v}")`;
-}
 
 const EditorPageContent = () => {
   const searchParams = useSearchParams();
@@ -42,7 +25,6 @@ const EditorPageContent = () => {
   const { importCSS, getAllStyles } = useCSSImporter();
   const [isLoaded, setIsLoaded] = useState(false);
   const [isActionDockOpen, setIsActionDockOpen] = useState(false);
-  const [backgroundDialogOpen, setBackgroundDialogOpen] = useState(false);
 
   // 處理 URL 匯入
   useEffect(() => {
@@ -164,82 +146,19 @@ const EditorPageContent = () => {
     };
   }, [isLoaded, getAllStyles]);
 
-  const setInitialBatch = useStyleManager(s => s.setInitialBatch);
-  useEffect(() => {
-    setInitialBatch("body", BODY_STYLE_DEFAULTS);
-  }, [setInitialBatch]);
-
-  const backgroundImage = useStyleProp("body", "backgroundImage");
-  const backgroundSize = useStyleProp("body", "backgroundSize");
-  const backgroundRepeat = useStyleProp("body", "backgroundRepeat");
-  const backgroundPosition = useStyleProp("body", "backgroundPosition");
-  const backgroundAttachment = useStyleProp("body", "backgroundAttachment");
-
-  const backgroundImageChanged =
-    backgroundImage.value !== backgroundImage.initial &&
-    backgroundImage.value !== "none";
-  const backgroundSizeChanged =
-    backgroundSize.value !== backgroundSize.initial;
-  const backgroundRepeatChanged =
-    backgroundRepeat.value !== backgroundRepeat.initial;
   return (
     <>
-      <EditorPageStyle
-        backgroundImage={backgroundImage.value as CssValue}
-        backgroundSize={backgroundSize.value as CssValue}
-        backgroundRepeat={backgroundRepeat.value as CssValue}
-        backgroundPosition={backgroundPosition.value as CssValue}
-        backgroundAttachment={backgroundAttachment.value as CssValue}
-        backgroundImageChanged={backgroundImageChanged}
-        backgroundSizeChanged={backgroundSizeChanged}
-        backgroundRepeatChanged={backgroundRepeatChanged}
-      />
-
-      <ImageUploader
-        showTrigger={false}
-        open={backgroundDialogOpen}
-        onOpenChange={setBackgroundDialogOpen}
-        isLoggingIn={isLoggingIn}
-        onUploadedUrl={(url) => {
-          const v = toBackgroundImageCssValue(url);
-          backgroundImage.set(v);
-          backgroundSize.set(BODY_STYLE_DEFAULTS.backgroundSize);
-          backgroundRepeat.set(BODY_STYLE_DEFAULTS.backgroundRepeat);
-        }}
-        onResetBackground={() => {
-          backgroundImage.set(backgroundImage.initial ?? BODY_STYLE_DEFAULTS.backgroundImage);
-          backgroundSize.set(backgroundSize.initial ?? BODY_STYLE_DEFAULTS.backgroundSize);
-          backgroundRepeat.set(backgroundRepeat.initial ?? BODY_STYLE_DEFAULTS.backgroundRepeat);
-        }}
-      />
+      {/* 用途：常駐掛載 response_count 的 store 註冊與高權重預覽 CSS，不能依賴右鍵選單是否開啟。 */}
+      <ResponseCountStyles />
 
       <div id="layout_body">
         <PlurkTopBar />
         <div id="layout_content_html" className="_lch_">
           <div id="layout_content" className="_lc_ clearfix">
-            <ContextMenu>
-              <ContextMenuTrigger>
-                <PlurkTimeline />
-                <PlurkTimelineControl />
-              </ContextMenuTrigger>
-              <ContextMenuContent style={{ zIndex: 1300, minWidth: 200, padding: 4 }}>
-                <ContextMenuItem
-                  style={{
-                    padding: "8px 12px",
-                    fontSize: 13,
-                    borderRadius: 6,
-                    cursor: "pointer",
-                    outline: "none",
-                    backgroundColor: "#ffffff",
-                    color: "#374151",
-                    border: "1px solid #e5e7eb",
-                  }}
-                  onSelect={() => setBackgroundDialogOpen(true)}
-                >
-                  更換背景圖
-                </ContextMenuItem>
-              </ContextMenuContent>
-            </ContextMenu>
+            <TimelineBackground isLoggingIn={isLoggingIn}>
+              <PlurkTimeline />
+              <PlurkTimelineControl />
+            </TimelineBackground>
             <PlurkDashboard />
             <PlurkFooter />
             {/* toggle button group */}

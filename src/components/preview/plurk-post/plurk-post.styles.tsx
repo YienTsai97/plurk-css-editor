@@ -1,22 +1,7 @@
-import type { PlurkPostPreviewStyleProps } from "./plurk-post.types";
 import { PLURK_POST_STYLE_DEFAULTS } from "@/store/styleManager/defaults";
-import type { StyleProps } from "@/store/styleManager/types";
-import { cssValueToString } from "@/store/styleManager/utils/cssValue";
 
-type PlurkCntStyleProps = Required<
-  Pick<StyleProps, "backgroundColor" | "backgroundImage" | "border">
->;
-
-/** 預覽貼文主體的基礎版面與 Plurk 時間軸結構（表格、頭像、內文區等），並將使用者設定的背景色／背景圖／邊框套用在 .plurk_cnt。 */
-export const PostStaticStyles = ({
-  backgroundColor,
-  backgroundImage,
-  border,
-}: PlurkCntStyleProps) => {
-  const bg = cssValueToString(backgroundColor) || PLURK_POST_STYLE_DEFAULTS.backgroundColor;
-  const bi = cssValueToString(backgroundImage) || PLURK_POST_STYLE_DEFAULTS.backgroundImage;
-  const bd = cssValueToString(border) || PLURK_POST_STYLE_DEFAULTS.border;
-
+/** 預覽貼文主體的基礎版面與 Plurk 時間軸結構（表格、頭像、內文區等），可編輯覆寫由 plurk-post-appearance feature 常駐處理。 */
+export const PostStaticStyles = () => {
   return (
     <style>
       {`
@@ -28,12 +13,12 @@ export const PostStaticStyles = ({
       position: relative;
       font-weight: normal;
       color: #111;
-      background-color: ${bg};
-      background-image: ${bi};
+      background-color: ${PLURK_POST_STYLE_DEFAULTS.backgroundColor};
+      background-image: ${PLURK_POST_STYLE_DEFAULTS.backgroundImage};
       padding: 2px 0 0;
       line-height: 1.3;
       box-shadow: 1px 1px 3px -3px #000;
-      border: ${bd};
+      border: ${PLURK_POST_STYLE_DEFAULTS.border};
     }
     .td_qual { width: auto; padding: 2px 0 2px 5px; white-space: nowrap; }
     .name { color: #111; font-weight: bold; text-decoration: none; }
@@ -149,10 +134,11 @@ const PostSupplementStyles = () => (
 
     /* --- response count & time --- */
     .td_response_count { vertical-align: middle; padding: 0 4px; }
+    /* response_count 預設保持正方形；圓角由共通編輯器寫入 timeline-cnt response_count。 */
     .response_count {
       display: inline-block; min-width: 20px; height: 20px; line-height: 20px;
       text-align: center; background-color: #FF574D; color: #fff;
-      border-radius: 10px; font-size: 11px; font-weight: bold; padding: 0 6px;
+      border-radius: 0; font-size: 11px; font-weight: bold; padding: 0 6px;
     }
     .new .response_count { background-color: #e53e3e; }
     .time {
@@ -241,43 +227,10 @@ const ResponseBoxStyles = () => (
   </style>
 );
 
-/** 當使用者在編輯器有手動變更時，以重複選擇器提高權重，覆寫 StaticStyles 等預設規則，確保自訂背景／邊框／暱稱色生效。 */
-export const HighSpecificityStyles = ({
-  backgroundColor,
-  backgroundImage,
-  border,
-  color,
-  backgroundColorChanged,
-  backgroundImageChanged,
-  borderChanged,
-  colorChanged,
-  hasManualChanges,
-}: PlurkPostPreviewStyleProps) => {
-  if (!hasManualChanges) return null;
-
-  const css = [
-    backgroundColorChanged &&
-      `body#pcg .plurk_cnt.plurk_cnt.plurk_cnt { background-color: ${cssValueToString(backgroundColor)}; }`,
-    backgroundImageChanged &&
-      `body#pcg .plurk_cnt.plurk_cnt.plurk_cnt { background-image: ${cssValueToString(backgroundImage)}; }`,
-    borderChanged && `body#pcg .plurk_cnt.plurk_cnt.plurk_cnt { border: ${cssValueToString(border)}; }`,
-    colorChanged && `body#pcg .name.name.name { color: ${cssValueToString(color)}; }`,
-  ]
-    .filter(Boolean)
-    .join("\n");
-
-  return <style>{css}</style>;
-};
-
-export const PlurkPostStyles = (props: PlurkPostPreviewStyleProps) => (
+export const PlurkPostStyles = () => (
   <>
-    <PostStaticStyles
-      backgroundColor={props.backgroundColor}
-      backgroundImage={props.backgroundImage}
-      border={props.border}
-    />
+    <PostStaticStyles />
     <PostSupplementStyles />
     <ResponseBoxStyles />
-    <HighSpecificityStyles {...props} />
   </>
 );
