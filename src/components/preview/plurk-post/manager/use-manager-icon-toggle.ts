@@ -1,4 +1,3 @@
-import type { MouseEvent } from "react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import type { ManagerIconState } from "./icon-state.type"
 
@@ -45,7 +44,7 @@ export function useManagerIconToggle(
 
   const state: ManagerIconState = on ? "on" : "off"
 
-  const toggle = useCallback((_e: MouseEvent<HTMLAnchorElement>) => {
+  const toggle = useCallback(() => {
     setOn((v) => !v)
   }, [])
 
@@ -78,13 +77,10 @@ export function useManagerIconToggleWithCount(
 
   const state: ManagerIconState = on ? "on" : "off"
 
-  const handleToggle = useCallback(
-    (_e: MouseEvent<HTMLAnchorElement>) => {
-      setCount((c) => (on ? Math.max(0, c - 1) : c + 1))
-      setOn((v) => !v)
-    },
-    [on],
-  )
+  const handleToggle = useCallback(() => {
+    setCount((c) => (on ? Math.max(0, c - 1) : c + 1))
+    setOn((v) => !v)
+  }, [on])
 
   return { state, isOn: on, count, handleToggle }
 }

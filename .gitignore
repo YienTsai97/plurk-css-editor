@@ -50,7 +50,9 @@ next-env.d.ts
 cspell.json
 /src/generated/prisma
 *.md
-# 仍要納入版控的 Markdown（*.md 全域忽略時需例外）
-!docs/issue-records/
-!docs/issue-records/**/*.md
-/docs/plurk-css-lab/
+!README.md
+# 內部文件不納入版控
+/docs/
+
+#Windows
+bash.exe.stackdump
