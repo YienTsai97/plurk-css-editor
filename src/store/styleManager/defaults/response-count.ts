@@ -10,11 +10,11 @@ export type ResponseCountNewStyleDefaults = Required<
   Pick<StyleProps, "backgroundColor" | "color">
 >;
 
-/** 用途：已讀回應數徽章的 store 初始值；borderRadius 設為 0，讓預覽一開始呈正方形。 */
+/** 用途：已讀回應數徽章的 store 初始值；borderRadius 用百分比，0% 代表一開始呈正方形。 */
 export const RESPONSE_COUNT_STYLE_DEFAULTS = {
   backgroundColor: "rgba(255, 87, 77, 1)",
   color: "rgba(255, 255, 255, 1)",
-  borderRadius: "0",
+  borderRadius: "0%",
 } satisfies ResponseCountStyleDefaults;
 
 /** 用途：未讀回應數徽章的 store 初始值，只保留會覆寫 `.response_count` 的顏色。 */

@@ -135,6 +135,44 @@ const bgColor = useStyleProp(PLURK_POST_SELECTOR, "backgroundColor");
 - menu 不負責注入 CSS。
 - 即時預覽 CSS 交給同 feature 的 `styles.tsx`。
 
+### 3.1 數值型控制器：優先使用 slider
+
+如果控制器是在調整「數字」，例如：
+
+- 寬度
+- 圓角
+- 透明度
+- 字級
+- 間距
+
+優先使用 `NumberSliderControl`，不要每個地方都手寫 `type="number"` input。
+
+最小範例：
+
+```tsx
+<NumberSliderControl
+  label="寬度"
+  value={widthNumber}
+  min={0}
+  max={20}
+  step={1}
+  unit="px"
+  onChange={(value) => setWidth(`${value}px`)}
+/>
+```
+
+新手理解：
+
+- `max` 不是固定的，要依 controller 決定。
+- 邊框寬度用 `px` 時可能 0–20 就夠。
+- 百分比寬度可以用 0–100。
+- `border-radius` 目前採用 `%`，例如 response count 是 0–50%。
+
+目前範例：
+
+- `BorderEditor` 的邊框寬度：依單位調整 slider 上限。
+- `ResponseCountMenu` 的圓角：使用 0–50% slider。
+
 ### 4. wrapper：需要長期存在的 UI 狀態
 
 河道背景比較特別，因為它有 `ImageUploader` dialog。  

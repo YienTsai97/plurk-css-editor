@@ -106,15 +106,16 @@ Visibility: PRIVATE | UNLISTED | PUBLIC
 
 ```
 components/
-├── controllers/          # 互動控制元件
-│   ├── color-picker      # 色彩選擇器（react-color 封裝）
-│   ├── border-editor     # 邊框粗細 / 圓角 / 樣式
-│   └── ImageUploader     # 圖片上傳元件
-│
 ├── editor/               # 編輯器專屬
 │   ├── public-editor-header   # 公開編輯器頂部（Flow A）
 │   ├── editor-context-menu    # 編輯器右鍵選單共用外殼與 row/section 元件
 │   └── save-project-button    # 儲存 / 建立專案按鈕
+│
+├── controllers/          # 編輯器控制器
+│   ├── color-picker           # 色彩選擇器
+│   ├── border-editor          # 邊框樣式；寬度使用 NumberSliderControl
+│   ├── number-slider-control  # 數值型樣式共用 slider（可設定 min/max/step/unit）
+│   └── ImageUploader          # 圖片上傳 / 外連背景圖
 │
 ├── preview/              # Plurk 模擬預覽元件
 │   ├── plurk-top-bar          # 導覽列
@@ -143,6 +144,7 @@ components/
 └── ui/                   # 通用 UI 元件（Radix 封裝）
     ├── context-menu
     ├── popover
+    ├── slider
     └── input
 ```
 
@@ -202,7 +204,7 @@ type StyleManagerState = {
 | --- | --- | --- | --- |
 | 貼文外觀 | `src/components/preview/plurk-post/plurk-post-appearance/` | `.plurk_cnt`, `.name` | 貼文背景色、背景圖、邊框、暱稱色預覽覆寫 |
 | 河道背景 | `src/components/preview/plurk-timeline/timeline-background/` | `body` | UI 顯示為河道背景；為相容既有草稿與匯出仍使用 `body` |
-| 回應數徽章 | `src/components/preview/plurk-timeline/response-count/` | `.timeline-cnt .response_count`, `.timeline-cnt .new .response_count` | 已讀/未讀徽章顏色與共通圓角 |
+| 回應數徽章 | `src/components/preview/plurk-timeline/response-count/` | `.timeline-cnt .response_count`, `.timeline-cnt .new .response_count` | 已讀/未讀徽章顏色與共通圓角；圓角使用百分比 slider |
 
 **資料流：**
 
@@ -215,6 +217,12 @@ FeatureMenu
 ```
 
 父層元件只負責掛載 feature，不再直接知道每個 selector 的細節。例如 `/editor` 只掛 `TimelineBackground`，`PlurkPost` 只掛 `PlurkPostAppearanceStyles`。
+
+**數值型控制器規則：**
+
+- 涉及寬度、圓角、透明度、字級等可連續調整的數值，優先使用 `NumberSliderControl`。
+- 各 feature / controller 自行傳入 `max`、`step`、`unit`，避免所有數值共用不合理範圍。
+- 目前 response count 圓角使用 `%`（0–50），BorderEditor 寬度依單位調整上限（例如 px、em/rem、%）。
 
 ### 4.5 Plurk Post manager 行為（新增）
 

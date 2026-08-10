@@ -14,6 +14,7 @@
 | CSS 匯入 / 匯出 | ✅ 完成 | 解析外部 CSS、來源標記、匯出完整 CSS 字串 |
 | 預覽元件系統 | ✅ 完成 | Dashboard、Timeline、Post、TopBar、Footer |
 | 編輯控制元件 | ✅ 完成 | ColorPicker、BorderEditor、ImageUploader |
+| 數值型 Slider 控制器 | ✅ 完成 | `NumberSliderControl` + Radix Slider；圓角/寬度等數值可依 feature 設定 min/max/step/unit |
 | Style Feature Module 架構 | ✅ 完成 | 貼文外觀、河道背景、回應數徽章已改成 selector/menu/styles 分層管理 |
 | 編輯器右鍵選單架構 | ✅ 完成 | 共用 `EditorMenuContent` / section / row / trigger，統一河道與貼文選單視覺 |
 | 回應數徽章控制器 | ✅ 完成 | 已讀/未讀顏色、共通圓角、Plurk 實站匯出三段式特例 |
@@ -41,6 +42,7 @@
 - [ ] **第 3 波（進階控制）**：字型、漸層、陰影、動畫等進階控制器，依成功率與可用性逐步納入
 - [ ] **控制器驗收標準**：每個控制器都需附「可套用範例 + 失敗邊界 + 回退策略」
 - [x] **Style feature module 基礎**：貼文外觀、河道背景與回應數徽章已建立可複用拆分模式，後續新 target 可照此擴充
+- [x] **數值型控制器 Slider 化**：border width 與 response-count border radius 已改用 slider；後續寬度/透明度/字級等數值控制器沿用相同模式
 
 ### 1.2 高可玩性核心迴圈（先做）
 

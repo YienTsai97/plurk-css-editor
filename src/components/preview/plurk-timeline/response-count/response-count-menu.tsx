@@ -1,10 +1,10 @@
 "use client";
 
 import ColorPicker from "@/components/controllers/color-picker";
+import { NumberSliderControl } from "@/components/controllers/number-slider-control";
 import {
   editorMenuTriggerClassName,
   editorMenuTriggerStyle,
-  EditorMenuRow,
   EditorMenuSectionLabel,
   EditorMenuSubContent,
   EditorMenuSubTrigger,
@@ -17,26 +17,16 @@ import {
 import { useStyleProp } from "@/store/styleManager/styleManager";
 import { cssValueToString } from "@/store/styleManager/utils/cssValue";
 import { ContextMenuSub } from "@/components/ui/context-menu";
-import type { CSSProperties } from "react";
 import {
   RESPONSE_COUNT_NEW_SELECTOR,
   RESPONSE_COUNT_SELECTOR,
 } from "./response-count.constants";
 
-/** 用途：共通圓角目前只支援 px 數值，這裡定義右側 number input 的外觀。 */
-const numberInputStyle: CSSProperties = {
-  width: 64,
-  border: "1px solid #d1d5db",
-  borderRadius: 4,
-  padding: "4px 6px",
-  fontSize: 12,
-};
-
-/** 用途：把 store 裡可能是 `0` / `0px` / 匯入值的 borderRadius 轉成 input 可顯示的數字。 */
-const parseRadiusInput = (value: unknown) => {
+/** 用途：把 store 裡可能是 `0` / `0%` / 匯入值的 borderRadius 轉成 slider 可顯示的百分比數字。 */
+const parseRadiusPercent = (value: unknown) => {
   const text = cssValueToString(value).trim();
   const match = text.match(/^(\d+(?:\.\d+)?)/);
-  return match?.[1] ?? "0";
+  return Number(match?.[1] ?? 0);
 };
 
 /** 用途：貼文 context menu 內的「回應數徽章」子選單，提供已讀／未讀徽章顏色與共通圓角設定。 */
@@ -56,22 +46,16 @@ export const ResponseCountMenu = () => {
       <EditorMenuSubContent style={{ minWidth: 250 }}>
         {/* 用途：已讀與未讀共用的基礎徽章外觀。 */}
         <EditorMenuSectionLabel>共通</EditorMenuSectionLabel>
-        <EditorMenuRow label="圓角">
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <input
-              type="number"
-              min="0"
-              step="1"
-              value={parseRadiusInput(borderRadius.value)}
-              onChange={(event) => {
-                const value = event.target.value;
-                borderRadius.set(value === "" ? "0" : `${value}px`);
-              }}
-              style={numberInputStyle}
-            />
-            <span style={{ fontSize: 12, color: "#6b7280" }}>px</span>
-          </div>
-        </EditorMenuRow>
+        <NumberSliderControl
+          label="圓角"
+          value={parseRadiusPercent(borderRadius.value)}
+          min={0}
+          max={50}
+          step={1}
+          unit="%"
+          onChange={(value) => borderRadius.set(`${value}%`)}
+          style={{ padding: "0 4px" }}
+        />
 
         {/* 用途：一般/已讀回應數徽章的顏色設定。 */}
         <EditorMenuSectionLabel>已讀</EditorMenuSectionLabel>
