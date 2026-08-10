@@ -141,7 +141,7 @@ const getImages = async () => {
 };
 
 
-export const GET = async (request: NextRequest) => {
+export const GET = async () => {
   return getImages()
 }
 

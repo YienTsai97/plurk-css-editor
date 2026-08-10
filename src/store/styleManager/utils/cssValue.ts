@@ -1,4 +1,4 @@
-import type { ColorResult } from "react-color";
+import type { ColorResult, RGBColor } from "react-color";
 
 /**
  * Convert CssValue to a CSS-ready string
@@ -11,13 +11,13 @@ export function cssValueToString(value: unknown): string {
   if (typeof value === "number") return String(value);
 
   // react-color ColorResult shape: { hex, rgb: { r,g,b,a }, ... }
-  const v = value as Partial<ColorResult> & { rgb?: any; hex?: any };
+  const v = value as Partial<ColorResult> & { rgb?: Partial<RGBColor>; hex?: unknown };
 
   if (typeof v.hex === "string") return v.hex;
 
   if (v.rgb && typeof v.rgb === "object") {
     const { r, g, b, a } = v.rgb;
-    if ([r, g, b].every((n: any) => typeof n === "number")) {
+    if ([r, g, b].every((n): n is number => typeof n === "number")) {
       if (typeof a === "number") return `rgba(${r}, ${g}, ${b}, ${a})`;
       return `rgb(${r}, ${g}, ${b})`;
     }

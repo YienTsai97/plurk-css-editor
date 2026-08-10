@@ -1,6 +1,7 @@
 "use client"
 import * as Popover from "@radix-ui/react-popover";
 import dynamic from "next/dynamic";
+import type { CSSProperties, ReactNode } from "react";
 import { ColorResult } from "react-color";
 const ChromePicker = dynamic(() => import("react-color").then(m => m.ChromePicker), { ssr: false });
 
@@ -14,9 +15,21 @@ type Prop = {
   onChange: (v: string) => void
   defaultValue?: string;
   showReset?: boolean;
+  /** 用途：讓 context menu 可傳入整排 trigger；未傳時維持原本的 Select Color 按鈕。 */
+  trigger?: ReactNode;
+  triggerStyle?: CSSProperties;
+  triggerClassName?: string;
 }
 
-const ColorPicker = ({ value, onChange, defaultValue = "rgba(255, 255, 255, 1)", showReset = false }: Prop) => {
+const ColorPicker = ({
+  value,
+  onChange,
+  defaultValue = "rgba(255, 255, 255, 1)",
+  showReset = false,
+  trigger = "Select Color",
+  triggerStyle,
+  triggerClassName,
+}: Prop) => {
 
   const handleChange = (c: ColorResult) => {
     onChange(toRgbaString(c));
@@ -43,8 +56,13 @@ const ColorPicker = ({ value, onChange, defaultValue = "rgba(255, 255, 255, 1)",
       </style>
       <Popover.Root>
         <Popover.Trigger asChild>
-          <button type="button" style={{ fontSize: '12px', color: '#666' }}>
-            Select Color
+          {/* 用途：trigger 可被 editor menu 替換成整排可點列，同時保留 Popover 行為。 */}
+          <button
+            type="button"
+            className={triggerClassName}
+            style={{ fontSize: '12px', color: '#666', ...triggerStyle }}
+          >
+            {trigger}
           </button>
         </Popover.Trigger>
         <Popover.Content

@@ -2,6 +2,7 @@
 
 import { useCSSImporter } from "@/store/styleManager/styleManager";
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 export const PlurkTopBar = () => {
@@ -103,9 +104,9 @@ export const PlurkTopBar = () => {
         <div id="top-bar-main">
           <ul className="item-container">
             <li id="navbar-timeline" className="item tab portal current">
-              <a href="/">
+              <Link href="/">
                 <Image src={"/testicon/star.svg"} alt="star" width={24} height={24} />
-              </a>
+              </Link>
             </li>
             <li id="navbar-portal" className="item tab portal">
               <div id="bar-portal">
@@ -132,9 +133,9 @@ export const PlurkTopBar = () => {
         </div>
         <div id="top-bar-title">
           <div id="plurk_logo" className="nohover">
-            <a href="/" className="pif-plurklogo">
+            <Link href="/" className="pif-plurklogo">
               <Image src={"/plurk-icon.svg"} alt="plurklogo" width={28.55} height={24} />
-            </a>
+            </Link>
           </div>
         </div>
         <div id="top-bar-user">

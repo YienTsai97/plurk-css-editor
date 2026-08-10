@@ -1,6 +1,11 @@
 import { auth } from "@/auth";
+import { Prisma } from "@/generated/prisma";
 import { prisma } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
+
+type Visibility = "PRIVATE" | "UNLISTED" | "PUBLIC";
+const isVisibility = (value: string): value is Visibility =>
+  value === "PRIVATE" || value === "UNLISTED" || value === "PUBLIC";
 
 // GET /api/templates - 獲取模板列表
 export async function GET(request: NextRequest) {
@@ -14,7 +19,7 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit;
 
     // 構建查詢條件
-    const where: any = {};
+    const where: Prisma.StyleTemplateWhereInput = {};
 
     if (categoryId) {
       where.categories = {
@@ -28,7 +33,7 @@ export async function GET(request: NextRequest) {
       where.isOfficial = isOfficial === 'true';
     }
 
-    if (visibility && ['PRIVATE', 'UNLISTED', 'PUBLIC'].includes(visibility)) {
+    if (visibility && isVisibility(visibility)) {
       where.visibility = visibility;
     }
 
@@ -115,7 +120,7 @@ export async function POST(request: NextRequest) {
 
     // 檢查 slug 是否已存在
     let counter = 1;
-    let originalSlug = slug;
+    const originalSlug = slug;
     while (await prisma.styleTemplate.findFirst({ where: { slug } })) {
       slug = `${originalSlug}-${counter}`;
       counter++;

@@ -4,7 +4,8 @@ import { NextResponse } from "next/server";
 import { createUser, getUserByEmail, updateLoggedInUserInfo } from "./user.service";
 
 
-export const authGoogleSignIn = async (user: User, account: Account) => {
+export const authGoogleSignIn = async (user: User, _account: Account) => {
+  void _account;
   try {
     if (!user.email) {
       return { success: false, message: "Auth-Service:User email is required" };

@@ -6,7 +6,7 @@ import { createImportSlice } from "./slices/importSlice";
 import type { StyleManagerState } from "./types";
 
 export const useStyleManager = createWithEqualityFn<StyleManagerState>((set, get) => ({
-  ...(createCoreSlice(set, get) as any),
-  ...(createImportSlice(set, get) as any),
-  ...(createExportSlice(set, get) as any),
-}));
+  ...createCoreSlice(set, get),
+  ...createImportSlice(set, get),
+  ...createExportSlice(set, get),
+}) as StyleManagerState);

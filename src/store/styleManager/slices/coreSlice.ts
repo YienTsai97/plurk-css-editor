@@ -1,7 +1,7 @@
 import { CssValue, StyleKey } from "@/types/css.type";
-import { StyleManagerState, StyleProps } from "../types";
+import { SliceGet, SliceSet, StyleManagerState, StyleProps } from "../types";
 
-export const createCoreSlice = (set: any, get: any): Partial<StyleManagerState> => ({
+export const createCoreSlice = (set: SliceSet, get: SliceGet): Partial<StyleManagerState> => ({
   current: {},
   initial: {},
   styleSources: {},

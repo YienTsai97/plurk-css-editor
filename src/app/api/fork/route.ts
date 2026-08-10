@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
 
     // 檢查 slug 是否已存在
     let counter = 1;
-    let originalSlug = slug;
+    const originalSlug = slug;
     while (await prisma.project.findFirst({ where: { slug, userId: session.user.id } })) {
       slug = `${originalSlug}-${counter}`;
       counter++;

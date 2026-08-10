@@ -7,13 +7,21 @@ import { PlurkDashboard } from "@/components/preview/plurk-dashboard/plurk-dashb
 import { PlurkFooter } from "@/components/preview/plurk-footer";
 import { PlurkTimeline } from "@/components/preview/plurk-timeline/plurk-timeline";
 import { PlurkTimelineControl } from "@/components/preview/plurk-timeline/plurk-timeline-control";
+import { ResponseCountStyles } from "@/components/preview/plurk-timeline/response-count/response-count-styles";
+import { TimelineBackground } from "@/components/preview/plurk-timeline/timeline-background/timeline-background";
 import { PlurkTopBar } from "@/components/preview/plurk-top-bar";
 import { useCSSImporter } from "@/store/styleManager/styleManager";
+import { CssValue } from "@/types/css.type";
+import { useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
-const EditorPage = () => {
+type ParsedCssRule = { selector: string; properties: Record<string, CssValue> };
+
+const EditorPageContent = () => {
   const searchParams = useSearchParams();
+  const { status } = useSession();
+  const isLoggingIn = status === "authenticated";
   const { importCSS, getAllStyles } = useCSSImporter();
   const [isLoaded, setIsLoaded] = useState(false);
   const [isActionDockOpen, setIsActionDockOpen] = useState(false);
@@ -45,9 +53,8 @@ const EditorPage = () => {
   }, [searchParams, importCSS]);
 
   // 解析 CSS 字串
-  const parseCSS = (cssString: string) => {
-    const rules: Array<{ selector: string; properties: Record<string, any> }> =
-      [];
+  const parseCSS = (cssString: string): ParsedCssRule[] => {
+    const rules: ParsedCssRule[] = [];
 
     // 移除註解
     const cleanCSS = cssString.replace(/\/\*[\s\S]*?\*\//g, "");
@@ -62,7 +69,7 @@ const EditorPage = () => {
         const selector = selectorMatch[1].trim();
         const propertiesText = propertiesMatch[1];
 
-        const properties: Record<string, any> = {};
+        const properties: Record<string, CssValue> = {};
         const propertyPairs = propertiesText
           .split(";")
           .filter((pair) => pair.trim());
@@ -91,7 +98,7 @@ const EditorPage = () => {
     try {
       const savedDraft = localStorage.getItem("plurk-css-editor-draft");
       if (savedDraft) {
-        const { css, timestamp } = JSON.parse(savedDraft);
+        const { css } = JSON.parse(savedDraft);
         const cssRules = parseCSS(css);
         importCSS(cssRules);
         console.log(
@@ -141,63 +148,17 @@ const EditorPage = () => {
 
   return (
     <>
-      <style>
-        {`
-          body {
-            background: #eeebf0;
-            color: #333;
-            /*以下為新添背景圖片設定，可自行修改*/
-             background-image: url("https://static.vecteezy.com/system/resources/thumbnails/049/855/471/small/nature-background-high-resolution-wallpaper-for-a-serene-and-stunning-view-free-photo.jpg") !important;
-            background-size: cover;        /* 強制滿版*/
-            background-position: center;   /* 置中裁切 */
-            background-repeat: no-repeat;
-            background-attachment: fixed;  /* 可選：滾動時背景不動 */
-          }
-          body.language-large-font {
-            font-size: 13px;
-          }
-          body, #layout_content_html, #layout_content {
-            overflow-x: hidden;
-          }
-          body {
-            overflow-y: scroll;
-          }
-          body, div, dl, dt, dd, ul, ol, li, h1, h2, h3, h4, h5, h6, pre, code, form, fieldset, legend, input, textarea, p, blockquote, th, td {
-            margin: 0;
-            padding: 0;
-          }
-          body.language-large-font {
-            font-size: 13px;
-          }
-          #layout_content {
-            padding-top: 42px;
-            position: relative;
-          }
-          .clearfix {
-            clear: both;
-          }
-          .clearfix::after {
-            content: '';
-            clear: both;
-            width: 0px;
-            height: 0px;
-            display: block;
-            line-height: 0px;
-            font-size: 0px;
-          }
-          i {
-            font-style: normal;
-          }
-
-        `}
-      </style>
+      {/* 用途：常駐掛載 response_count 的 store 註冊與高權重預覽 CSS，不能依賴右鍵選單是否開啟。 */}
+      <ResponseCountStyles />
 
       <div id="layout_body">
         <PlurkTopBar />
         <div id="layout_content_html" className="_lch_">
           <div id="layout_content" className="_lc_ clearfix">
-            <PlurkTimeline />
-            <PlurkTimelineControl />
+            <TimelineBackground isLoggingIn={isLoggingIn}>
+              <PlurkTimeline />
+              <PlurkTimelineControl />
+            </TimelineBackground>
             <PlurkDashboard />
             <PlurkFooter />
             {/* toggle button group */}
@@ -248,10 +209,31 @@ const EditorPage = () => {
               )}
             </div>
           </div>
-        </div>
-      </div>
+        </div >
+      </div >
     </>
   );
 };
 
-export default EditorPage;
+export default function EditorPage() {
+  return (
+    <Suspense
+      fallback={
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: "100vh",
+            fontSize: "16px",
+            color: "#666",
+          }}
+        >
+          載入編輯器…
+        </div>
+      }
+    >
+      <EditorPageContent />
+    </Suspense>
+  );
+}

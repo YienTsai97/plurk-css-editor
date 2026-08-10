@@ -1,4 +1,5 @@
 import { CssValue, StyleKey } from "@/types/css.type";
+import { StoreApi } from "zustand";
 
 export type StyleProps = Partial<Record<StyleKey, CssValue>>;
 export type StyleDict = Record<string, StyleProps>;
@@ -19,6 +20,7 @@ export type StyleManagerState = {
   styleSources: Record<string, Record<string, StyleSource>>;
   allStyles: Map<string, Map<string, StyleEntry>>;
 
+  resetAll: () => void;
   setInitialBatch: (selector: string, init: StyleProps) => void;
   setProp: (selector: string, prop: StyleKey, value: CssValue) => void;
 
@@ -32,3 +34,6 @@ export type StyleManagerState = {
 
   getAllStyles: () => { css: string; tags: string[] };
 };
+
+export type SliceSet = StoreApi<StyleManagerState>["setState"];
+export type SliceGet = StoreApi<StyleManagerState>["getState"];

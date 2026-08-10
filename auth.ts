@@ -1,18 +1,10 @@
 import { authGoogleSignIn } from "@/services/auth.service";
 import NextAuth, { Account, Session, User } from "next-auth";
 import { JWT } from "next-auth/jwt";
-import Google from "next-auth/providers/google";
+import authConfig from "./auth.config";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  providers: [
-    Google({
-      clientId: process.env.AUTH_GOOGLE_ID!,
-      clientSecret: process.env.AUTH_GOOGLE_SECRET!,
-    }),
-  ],
-  pages: {
-    signIn: "/auth/signin",
-  },
+  ...authConfig,
   callbacks: {
     async signIn({ user, account }: { user: User, account?: Account | null }) {
       // account only exists during OAuth sign in.
@@ -60,9 +52,4 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return token
     },
   },
-  session: {
-    strategy: "jwt" as const,
-  },
-  secret: process.env.AUTH_SECRET!,
-  debug: true,
 })

@@ -29,7 +29,7 @@ export const SaveProjectButton = ({ layout = "fixed" }: SaveProjectButtonProps) 
     setIsSaving(true);
 
     try {
-      const { css, tags } = getAllStyles();
+      const { css } = getAllStyles();
 
       // 檢查是否有樣式內容
       if (!css.trim()) {
@@ -233,7 +233,7 @@ export const SaveProjectButton = ({ layout = "fixed" }: SaveProjectButtonProps) 
                       name="visibility"
                       value={vis}
                       checked={visibility === vis}
-                      onChange={(e) => setVisibility(e.target.value as any)}
+                      onChange={(e) => setVisibility(e.target.value as 'PRIVATE' | 'UNLISTED' | 'PUBLIC')}
                     />
                     <span>
                       {vis === 'PRIVATE' && '👁️ 私人'}

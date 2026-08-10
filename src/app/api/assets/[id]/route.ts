@@ -3,12 +3,6 @@ import { supabaseServer } from "@/lib/supabaseServer"
 import { requireAuth } from "@/services/auth.service"
 import { NextRequest, NextResponse } from "next/server"
 
-const BUCKET_NAME = "pcg-assets"
-
-type RouteParams = {
-  params: { id: string }
-}
-
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
