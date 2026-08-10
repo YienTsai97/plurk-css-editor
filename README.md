@@ -1,102 +1,101 @@
 # Plurk CSS Editor
 
-一款專為 [Plurk](https://www.plurk.com/) 平台設計的視覺化 CSS 編輯器，讓使用者透過即時預覽介面自訂個人頁面樣式，無需手寫 CSS。
+> 用滑鼠改你的 Plurk 個人主頁，改完複製 CSS，直接貼回 Plurk 就生效。
+> 不用寫 CSS、不用註冊、不用等審核。
 
-## 功能特色
+---
 
-- **即時預覽** — 模擬 Plurk 的 Dashboard、Timeline、Post、Footer 等元件，調整樣式後立即反映
-- **CSS 匯入 / 匯出** — 貼上既有 CSS 即可匯入；編輯完成後一鍵匯出可直接套用的 CSS 字串
-- **專案管理** — 建立、編輯、刪除個人專案；支援公開 / 不公開 / 非公開連結三種可見度
-- **樣式模板** — 瀏覽社群分享的模板，Fork 到自己的專案繼續客製
-- **圖片素材管理** — 上傳背景圖等素材並套用到樣式中
-- **帳號驗證** — 透過 NextAuth.js 登入，資料安全儲存於雲端資料庫
+## 這是什麼
 
-## 技術架構
+一個「看得到就能改」的 Plurk 樣式編輯器。
 
-| 層級 | 技術 |
-| --- | --- |
-| 框架 | Next.js 15 (App Router) + React 19 |
-| 語言 | TypeScript 5 |
-| 狀態管理 | Zustand 5 (自製 StyleManager) |
-| 資料庫 | PostgreSQL — Prisma ORM 6 |
-| 驗證 | NextAuth.js 5 |
-| 樣式 | Tailwind CSS 4 |
-| UI 元件 | Radix UI + Lucide Icons |
-| 儲存空間 | Supabase Storage |
+畫面中央是模擬出來的 Plurk 個人主頁（河道、貼文、主控台）。
+你在上面 **對想改的地方按右鍵**，跳出選單調顏色、邊框、背景圖，預覽會立刻跟著變。
 
-## 快速開始
+滿意之後按匯出，把 CSS 貼進 Plurk 的自訂樣式欄位就完成了。
 
-### 前置需求
+---
 
-- Node.js ≥ 18
-- PostgreSQL 資料庫（可使用 Supabase）
+## 三步驟上手
 
-### 安裝
+**1. 打開編輯器**
 
-```bash
-git clone https://github.com/YienTsai97/plurk-css-editor.git
-cd plurk-css-editor
-npm install
-```
+進入 `/editor`，直接開始，不需要帳號。
 
-### 環境變數
+**2. 右鍵改樣式**
 
-在專案根目錄建立 `.env` 檔案：
+在河道背景、貼文、回應數徽章上按右鍵，選單會出現對應的控制項。
+顏色用色盤點，數值用滑桿拉，改完馬上看到結果。
 
-```env
-DATABASE_URL="your-database-url"
-DIRECT_URL="your-direct-database-url"
-AUTH_SECRET="your-auth-secret"
-```
+**3. 匯出貼回 Plurk**
 
-### 資料庫初始化
+點右下角的圓形按鈕展開功能列 → `Export CSS` → 複製到剪貼簿，
+再貼到 Plurk 的自訂 CSS 設定裡儲存。
 
-```bash
-npm run db:migrate:dev
-npm run db:generate
-npm run db:seed          # 選用：匯入範例資料
-```
+---
 
-### 啟動開發伺服器
+## 現在可以調什麼
 
-```bash
-npm run dev
-```
 
-開啟 [http://localhost:3000](http://localhost:3000) 即可使用。
+| 區塊    | 可以改的東西                   |
+| ----- | ------------------------ |
+| 河道背景  | 背景色、背景圖（上傳或貼網址）、尺寸、重複、位置 |
+| 貼文外觀  | 貼文底色、背景圖、邊框粗細／圓角／樣式、暱稱顏色 |
+| 回應數徽章 | 已讀／未讀的底色與文字色、圓角          |
 
-## 專案結構
 
-```
-├── prisma/              # Prisma schema 與 migration 檔案
-├── public/              # 靜態資源（icon、圖片）
-├── src/
-│   ├── app/             # Next.js App Router 頁面與 API Routes
-│   ├── components/      # React 元件
-│   │   ├── controllers/ # 色彩選擇器、邊框編輯器等互動控制元件
-│   │   ├── editor/      # 編輯器 Header、儲存按鈕等
-│   │   ├── preview/     # Plurk 模擬預覽元件（Dashboard、Timeline、Post …）
-│   │   └── ui/          # 通用 UI 元件（Popover、ContextMenu、Input）
-│   ├── lib/             # 資料庫連線、工具函式
-│   ├── services/        # 商業邏輯 Service 層（Project、Template、Auth …）
-│   ├── store/           # Zustand Store（StyleManager、BackgroundEditor）
-│   ├── types/           # TypeScript 型別定義
-│   └── utils/           # 工具函式（CSS 解析、邊框計算）
-├── package.json
-└── tsconfig.json
-```
+控制項還在持續增加中，以「在真實 Plurk 上驗證過會生效」為優先。
 
-## 可用指令
+---
 
-| 指令 | 說明 |
-| --- | --- |
-| `npm run dev` | 啟動開發伺服器（Turbopack） |
-| `npm run build` | 建置正式版 |
-| `npm run start` | 啟動正式伺服器 |
-| `npm run lint` | ESLint 程式碼檢查 |
-| `npm run db:studio` | 開啟 Prisma Studio（資料庫 GUI） |
-| `npm run db:migrate:dev` | 執行資料庫 Migration |
-| `npm run db:seed` | 匯入種子資料 |
+
+
+## 幾個好用的小地方
+
+**草稿自動保留**
+編輯過程每 30 秒自動存在你的瀏覽器裡，關掉分頁再回來也還在。
+
+**匯出有三種方式**
+複製到剪貼簿、下載 `.css` 檔、產生分享連結（別人開連結就會載入你的樣式）。
+可選擇是否附上註解標記。
+
+**已經有 CSS 也能接手**
+把現成的 Plurk CSS 貼進「匯入」欄位，編輯器會解析成可視化控制項，繼續微調。
+
+---
+
+
+
+## 常見問題
+
+**要註冊嗎？**
+不用。目前主打免登入的即開即用流程，會員與雲端專案管理尚未對外開放。
+在未來開放功能後仍會保留一般用戶免登入編輯器！
+
+**改的東西一定能套用到 Plurk 嗎？**
+編輯器只開放已在真實 Plurk 驗證過的樣式項目，所以匯出的 CSS 貼上去就應該會生效。
+若你另外手寫了複雜規則，仍可能被 Plurk 既有樣式蓋掉。
+
+**支援手機嗎？**
+目前以桌面瀏覽器為主，預覽區是固定寬度的工作視窗。
+
+**我的資料存在哪？**
+草稿只存在你自己的瀏覽器，不會上傳。
+
+---
+
+
+
+## 接下來會有
+
+- 復原／重做與樣式沙盒，讓你放心亂試
+- 一鍵套用的風格起手模板
+- 更多控制器：字型、陰影、透明度、頭像框、控制列
+- 會員系統與社群模板分享（尚未開放）
+
+---
+
+
 
 ## 授權
 
