@@ -7,5 +7,6 @@
 | [build-and-integration-issues.md](./build-and-integration-issues.md) | Prisma、Next.js 15、Middleware／Auth、ESLint、Supabase 環境、`.gitignore`、`useSearchParams` 等 |
 | [response-count-export-override.md](./response-count-export-override.md) | Plurk 實站 `.response_count` / `.new .response_count` 匯出覆寫順序與三段式 reset 特例 |
 | [style-feature-modules.md](./style-feature-modules.md) | 貼文外觀、河道背景、回應數徽章 feature module 拆分紀錄與新手範例 |
+| [editor-only-mode-and-preview-layout.md](./editor-only-mode-and-preview-layout.md) | `EDITOR_ONLY_MODE` 頂欄破圖、dashboard 右欄被擠、`globals.css` 型別宣告 |
 
 建議搜尋方式：先看本 README 表格，再開主文件用關鍵字（錯誤訊息片段）搜尋。
