@@ -1,13 +1,15 @@
-import type { ManagerIconState, PlurkManagerIconProps } from "./icon-state.type"
+import {
+  IconVolume,
+  IconVolumeMute
+} from "@/components/preview/common/preview-icons";
+import type { ManagerIconState, PlurkManagerIconProps } from "./icon-state.type";
 
 export function getManagerMuteIconClassName(state: ManagerIconState): string {
-  return state === "on"
-    ? "mute pif-volume-mute mute-on"
-    : "mute pif-volume mute-off"
+  return state === "on" ? "mute mute-on" : "mute mute-off";
 }
 
 export function PlurkManagerMuteIcon({ state, onToggle }: PlurkManagerIconProps) {
-  const interactive = Boolean(onToggle)
+  const interactive = Boolean(onToggle);
 
   return (
     <a
@@ -15,12 +17,15 @@ export function PlurkManagerMuteIcon({ state, onToggle }: PlurkManagerIconProps)
       onClick={
         interactive
           ? (e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            onToggle?.(e)
+            e.preventDefault();
+            e.stopPropagation();
+            onToggle?.(e);
           }
           : undefined
       }
-    />
-  )
+      aria-label={state === "on" ? "取消消音" : "消音"}
+    >
+      {state === "on" ? <IconVolumeMute size={22} /> : <IconVolume size={22} />}
+    </a>
+  );
 }

@@ -33,6 +33,8 @@ export type PostResponse = {
 
 export type PostThread = {
   reactionCount: number
+  /** 喜歡數；有值才顯示 `.favorite_count` 徽章（實站無人喜歡時整顆隱藏） */
+  favoriteCount?: number
   responseLabel: string
   responses: PostResponse[]
 }
@@ -58,9 +60,13 @@ export type PostData = {
   /** 初始轉噗數；預覽內切換 on/off 會 +1／-1，由 PlurkPost 內 state 維持 */
   replurkCount?: number
   showMark?: boolean
+  /** 書籤圖示 on／off；on 時為實站的 `.mark-on` 配色 */
+  markState?: ManagerIconState
   responseCount: number
   showResponseCount: boolean
   timeText: string
+  /** 時間前綴，例如實站編輯過的噗會顯示「上次編輯」 */
+  timePrefix?: string
   thread?: PostThread
 }
 

@@ -49,15 +49,20 @@ export const PlurkFooter = () => (
             ©<span>&nbsp;</span>
             <span id="footer-year">
               {new Date().getFullYear()}
-              <span> Plurk CSS Generator</span>
+              <span> Plurk CSS Generator by</span>
+              <a href="https://www.plurk.com/laviaco" target="_blank">
+                @laviaco
+              </a>
             </span>
           </li>
           <li>
-            <a href="/aboutUs">--- Footer Demo ---</a>
+            <a href="/about">關於本站</a>
           </li>
-          {/* <li>
-            <a href="/aboutUs">關於噗浪</a>
+          <li> |</li>
+          <li>
+            <a href="/editor">問題回報</a>
           </li>
+          {/*
           <li>
             <a href="/brandInfo">品牌資產</a>
           </li>
@@ -89,6 +94,9 @@ export const PlurkFooter = () => (
           <li>
             <a href="/contact">聯絡噗浪</a>
           </li> */}
+          <p>
+            <a href="/about">本頁為樣式預覽示意，非Plurk官方網站</a>
+          </p>
         </ul>
       </div>
     </footer>

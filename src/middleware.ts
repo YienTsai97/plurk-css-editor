@@ -4,27 +4,28 @@ import authConfig from "../auth.config"
 
 const { auth } = NextAuth(authConfig)
 
-//Editor only mode
 const EDITOR_ONLY_MODE: boolean = process.env.EDITOR_ONLY_MODE === "true"
-const isAllowedInEditorOnlyMode = (pathname: string): boolean => {
-  const allowedPaths = [
-    "/editor",
-    "/under-construction",
-    "/assets/public",
-    "/api/auth",
-    "/testicon",
-    "/plurk-icon.svg",
-  ]
-  return allowedPaths.some(allowedPath => pathname.startsWith(allowedPath))
+
+/** public/ 圖片素材由根路徑提供；next/image 優化時會再請求原始 URL */
+const PUBLIC_IMAGE_PATH = /\.(png|jpe?g|gif|webp|svg|ico|avif)$/i
+
+function isAllowedInEditorOnlyMode(pathname: string): boolean {
+  if (PUBLIC_IMAGE_PATH.test(pathname)) {
+    return true
+  }
+
+  const allowedPrefixes = ["/editor", "/about", "/under-construction", "/api/auth"]
+
+  return allowedPrefixes.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  )
 }
 
-//Middleware
 export default auth((req) => {
   const isLoggedIn: boolean = !!req.auth
   const { nextUrl } = req
   const pathname = nextUrl.pathname
 
-  //Editor only mode access control
   if (EDITOR_ONLY_MODE && !isAllowedInEditorOnlyMode(pathname)) {
     if (pathname === "/") {
       return NextResponse.redirect(new URL("/editor", nextUrl))
@@ -32,23 +33,17 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/under-construction", nextUrl))
   }
 
-  //Dashboard access control
-  if (pathname.startsWith("/dashboard")) {
-    if (!isLoggedIn) {
-      return NextResponse.redirect(new URL("/auth/signin", nextUrl))
-    }
-    if (isLoggedIn && pathname === "/auth/signin") {
-      return NextResponse.redirect(new URL("/dashboard", nextUrl))
-    }
+  if (isLoggedIn && pathname === "/auth/signin") {
+    return NextResponse.redirect(new URL("/dashboard", nextUrl))
   }
+
+  if (pathname.startsWith("/dashboard") && !isLoggedIn) {
+    return NextResponse.redirect(new URL("/auth/signin", nextUrl))
+  }
+
   return NextResponse.next()
 })
 
 export const config = {
-  matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico).*)"
-  ],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 }
-
-
-

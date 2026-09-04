@@ -1,8 +1,6 @@
 "use client";
 
-import { SaveProjectButton } from "@/components/editor/save-project-button";
-import { CssImport } from "@/components/preview/common/css-import";
-import { ExportButton } from "@/components/preview/common/export-button";
+import { EditorIoDock } from "@/components/editor/editor-io-dock";
 import { PlurkDashboard } from "@/components/preview/plurk-dashboard/plurk-dashboard";
 import { PlurkFooter } from "@/components/preview/plurk-footer";
 import { PlurkTimeline } from "@/components/preview/plurk-timeline/plurk-timeline";
@@ -14,7 +12,7 @@ import { useCSSImporter } from "@/store/styleManager/styleManager";
 import { CssValue } from "@/types/css.type";
 import { useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 
 type ParsedCssRule = { selector: string; properties: Record<string, CssValue> };
 
@@ -24,7 +22,7 @@ const EditorPageContent = () => {
   const isLoggingIn = status === "authenticated";
   const { importCSS, getAllStyles } = useCSSImporter();
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isActionDockOpen, setIsActionDockOpen] = useState(false);
+  const skipDraftSaveRef = useRef(false);
 
   // 處理 URL 匯入
   useEffect(() => {
@@ -119,6 +117,22 @@ const EditorPageContent = () => {
     const saveDraft = () => {
       try {
         const { css } = getAllStyles();
+        const hasStyles = Boolean(css.trim());
+
+        // 回復模板後略過一次寫回；若使用者立刻再匯入，hasStyles 為真則照常存草稿。
+        if (skipDraftSaveRef.current) {
+          skipDraftSaveRef.current = false;
+          if (!hasStyles) {
+            localStorage.removeItem("plurk-css-editor-draft");
+            return;
+          }
+        }
+
+        if (!hasStyles) {
+          localStorage.removeItem("plurk-css-editor-draft");
+          return;
+        }
+
         const draft = {
           css,
           timestamp: Date.now(),
@@ -129,10 +143,8 @@ const EditorPageContent = () => {
       }
     };
 
-    // 每 30 秒自動儲存
     const interval = setInterval(saveDraft, 30000);
 
-    // 頁面卸載時儲存
     const handleBeforeUnload = () => {
       saveDraft();
     };
@@ -142,7 +154,7 @@ const EditorPageContent = () => {
     return () => {
       clearInterval(interval);
       window.removeEventListener("beforeunload", handleBeforeUnload);
-      saveDraft(); // 最後一次儲存
+      saveDraft();
     };
   }, [isLoaded, getAllStyles]);
 
@@ -161,56 +173,14 @@ const EditorPageContent = () => {
             </TimelineBackground>
             <PlurkDashboard />
             <PlurkFooter />
-            {/* toggle button group */}
-            <div
-              style={{
-                position: "fixed",
-                right: "16px",
-                bottom: "16px",
-                zIndex: 1000,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "flex-end",
-                gap: "10px",
+            <EditorIoDock
+              onSkipDraftSave={() => {
+                skipDraftSaveRef.current = true;
               }}
-              onMouseEnter={() => setIsActionDockOpen(true)}
-              onMouseLeave={() => setIsActionDockOpen(false)}
-            >
-              <button
-                onClick={() => setIsActionDockOpen((prev) => !prev)}
-                title="功能選單"
-                style={{
-                  width: "40px",
-                  height: "40px",
-                  borderRadius: "999px",
-                  border: "none",
-                  backgroundColor: "#FF574D",
-                  color: "#fff",
-                  cursor: "pointer",
-                  fontSize: "18px",
-                  boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
-                }}
-              >
-                ...
-              </button>
-
-              {isActionDockOpen && (
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "8px",
-                  }}
-                >
-                  <ExportButton layout="inline" />
-                  <CssImport layout="inline" />
-                  <SaveProjectButton layout="inline" />
-                </div>
-              )}
-            </div>
+            />
           </div>
-        </div >
-      </div >
+        </div>
+      </div>
     </>
   );
 };

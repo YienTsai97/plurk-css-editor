@@ -25,9 +25,11 @@ export type StyleManagerState = {
   setProp: (selector: string, prop: StyleKey, value: CssValue) => void;
 
   importCSS: (cssRules: CSSRule[]) => void;
+  replaceImportedCSS: (cssRules: CSSRule[]) => void;
   setCSSVariable: (selector: string, prop: string, value: CssValue) => void;
   clearImportedCSS: () => void;
   resetImportedToInitial: () => void;
+  resetAllToInitial: () => void;
 
   getProp: (selector: string, prop: StyleKey) => CssValue | undefined;
   getInitial: (selector: string, prop: StyleKey) => CssValue | undefined;

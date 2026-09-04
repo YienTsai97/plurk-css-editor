@@ -1,8 +1,17 @@
+import type { CSSProperties } from "react";
+import { EditorMenuContent } from "@/components/editor/editor-context-menu";
+import {
+  IconAddReaction,
+  IconBookmark,
+  IconEdit,
+  IconGift,
+  IconOptions,
+  IconR18Plus,
+} from "@/components/preview/common/preview-icons";
 import {
   ContextMenu,
   ContextMenuTrigger
 } from "@/components/ui/context-menu";
-import { EditorMenuContent } from "@/components/editor/editor-context-menu";
 import Image from "next/image";
 import { PlurkManagerLikeIcon } from "./manager/like-icon";
 import { PlurkManagerMuteIcon } from "./manager/mute-icon";
@@ -67,8 +76,12 @@ const PlurkPost = ({ data, skipStyles = false }: PlurkPostProps) => {
                             <td className="td_qual">
                               <span>
                                 <a
-                                  className="name"
-                                  style={data.nameColor ? { color: data.nameColor } : undefined}
+                                  className={data.nameColor ? "name has-name-color" : "name"}
+                                  style={
+                                    data.nameColor
+                                      ? ({ color: data.nameColor, "--name-color": data.nameColor } as CSSProperties)
+                                      : undefined
+                                  }
                                 >
                                   {data.displayName}
                                 </a>
@@ -80,7 +93,9 @@ const PlurkPost = ({ data, skipStyles = false }: PlurkPostProps) => {
                                   <span>&nbsp;</span>
                                 )}
                                 {data.showPornIcon && (
-                                  <span className="porn-icon pif-porn"></span>
+                                  <span className="porn-icon pif-porn" aria-label="成人內容">
+                                    <IconR18Plus size={21} />
+                                  </span>
                                 )}
                               </span>
                             </td>
@@ -96,8 +111,8 @@ const PlurkPost = ({ data, skipStyles = false }: PlurkPostProps) => {
                                       <span className="reaction__count">{reaction.count}</span>
                                     </div>
                                   ))}
-                                  <div className="reactions__adder">
-                                    <i className="pif-add-reaction"></i>
+                                  <div className="reactions__adder" aria-label="新增互動">
+                                    <IconAddReaction size={18} />
                                   </div>
                                 </div>
                               </div>
@@ -109,6 +124,7 @@ const PlurkPost = ({ data, skipStyles = false }: PlurkPostProps) => {
                         <div className="time">
                           <a>
                             <span className="posted">
+                              {data.timePrefix ? `${data.timePrefix} ` : null}
                               <time className="timeago">
                                 {data.timeText}
                               </time>
@@ -117,7 +133,9 @@ const PlurkPost = ({ data, skipStyles = false }: PlurkPostProps) => {
                         </div>
                         <div className="manager">
                           {data.showEdit && (
-                            <a className="pif-edit edit" tabIndex={-1} aria-label="Edit"></a>
+                            <a className="edit" tabIndex={-1} aria-label="Edit">
+                              <IconEdit size={18} />
+                            </a>
                           )}
                           <PlurkManagerMuteIcon state={mute.state} onToggle={mute.toggle} />
                           {data.showReplurk && (
@@ -133,10 +151,20 @@ const PlurkPost = ({ data, skipStyles = false }: PlurkPostProps) => {
                             displayCount={like.count}
                           />
                           {data.showMark && (
-                            <a className="pif-bookmark mark mark-off" tabIndex={-1} aria-label="Bookmark"></a>
+                            <a
+                              className={`mark ${data.markState === "on" ? "mark-on" : "mark-off"}`}
+                              tabIndex={-1}
+                              aria-label="Bookmark"
+                            >
+                              <IconBookmark size={18} />
+                            </a>
                           )}
-                          <a className="pif-bone gift" tabIndex={-1} aria-label="Gift"></a>
-                          <a className="pif-option option" tabIndex={-1} aria-label="Options"></a>
+                          <a className="gift gift-receive" tabIndex={-1} aria-label="Gift">
+                            <IconGift size={18} />
+                          </a>
+                          <a className="option" tabIndex={-1} aria-label="Options">
+                            <IconOptions size={18} />
+                          </a>
                         </div>
                       </div>
 

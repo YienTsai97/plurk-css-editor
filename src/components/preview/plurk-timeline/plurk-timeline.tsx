@@ -146,7 +146,7 @@ export const PlurkTimeline = () => {
         <div id="dynamic_logo">
           <img
             id="creature"
-            src="https://s.plurk.com/creatures/big/72e28d113423eccdc548.png"
+            src="/creature1.png"
             alt="creature"
             style={{ width: "auto", height: "auto" }}
           />

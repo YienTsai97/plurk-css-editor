@@ -15,9 +15,18 @@ export function useStyleProp(selector: string, prop: StyleKey) {
 
 export function useCSSImporter() {
   const importCSS = useStyleManager((s) => s.importCSS);
+  const replaceImportedCSS = useStyleManager((s) => s.replaceImportedCSS);
   const getAllStyles = useStyleManager((s) => s.getAllStyles);
   const clearImportedCSS = useStyleManager((s) => s.clearImportedCSS);
   const resetImportedToInitial = useStyleManager((s) => s.resetImportedToInitial);
+  const resetAllToInitial = useStyleManager((s) => s.resetAllToInitial);
 
-  return { importCSS, getAllStyles, clearImportedCSS, resetImportedToInitial };
+  return {
+    importCSS,
+    replaceImportedCSS,
+    getAllStyles,
+    clearImportedCSS,
+    resetImportedToInitial,
+    resetAllToInitial,
+  };
 }

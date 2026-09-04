@@ -30,14 +30,14 @@ export const PlurkPostAppearanceMenu = () => {
         onChange={(v) => bgColor.set(v)}
         defaultValue={bgColorDefaultValue}
         showReset
-        trigger={<EditorMenuTriggerRow label="背景色" actionLabel="Select Color" />}
+        trigger={<EditorMenuTriggerRow label="背景色" actionLabel="" />}
         triggerClassName={editorMenuTriggerClassName}
         triggerStyle={editorMenuTriggerStyle}
       />
       <BorderEditor
         borderValue={border.value}
         setChange={border.set}
-        trigger={<EditorMenuTriggerRow label="邊框" actionLabel="Set Border" />}
+        trigger={<EditorMenuTriggerRow label="邊框" actionLabel="" />}
         triggerClassName={editorMenuTriggerClassName}
         triggerStyle={editorMenuTriggerStyle}
       />

@@ -69,7 +69,7 @@ const isTransparentColor = (input: string) => {
 const BorderEditor = ({
   borderValue,
   setChange,
-  trigger = "Set Border",
+  trigger = "",
   triggerStyle,
   triggerClassName,
 }: Prop) => {
@@ -281,16 +281,16 @@ const BorderEditor = ({
               }}
             >
               <option value="">選擇樣式</option>
-              <option value="none">none</option>
-              <option value="hidden">hidden</option>
-              <option value="dotted">dotted</option>
-              <option value="dashed">dashed</option>
-              <option value="solid">solid</option>
-              <option value="double">double</option>
-              <option value="groove">groove</option>
-              <option value="ridge">ridge</option>
-              <option value="inset">inset</option>
-              <option value="outset">outset</option>
+              <option value="none">無</option>
+              <option value="hidden">隱藏</option>
+              <option value="dotted">點點</option>
+              <option value="dashed">虛線</option>
+              <option value="solid">實線</option>
+              <option value="double">雙線</option>
+              <option value="groove">溝槽</option>
+              <option value="ridge">脊線</option>
+              <option value="inset">內凹</option>
+              <option value="outset">外凸</option>
             </select>
           </div>
 

@@ -107,7 +107,7 @@ display:flex;
             <div id="dash-profile">
               <a href="/settings/avatar">
                 <Image
-                  src="https://s.plurk.com/52de7e8ca7c3179df400.jpg"
+                  src="/profile_icon.png"
                   className="profile-pic"
                   id="profile_pic"
                   width={86}
@@ -116,8 +116,8 @@ display:flex;
                 />{" "}
               </a>{" "}
               <div id="full_name">
-                <span className="display_name">ptestcss </span>
-                <span className="nick_name">@ptestcss</span>
+                <span className="display_name">我的帳號 </span>
+                <span className="nick_name">@myAccount</span>
               </div>
               <div className="profile-info">
                 <span id="span_years"></span>
@@ -136,7 +136,7 @@ display:flex;
                 </span>
                 <span id="render_send_gift">
                   <a className="friend_man send_gift hideBlock">
-                    <i className="pif-bone">
+                    <span className="send-gift-icon" aria-hidden>
                       <svg
                         version="1.1"
                         width="15"
@@ -160,13 +160,13 @@ display:flex;
                           </g>
                         </g>
                       </svg>
-                    </i>
+                    </span>
                     送禮物
                   </a>
                 </span>
               </div>
               <p id="location_container">
-                <span id="location">Canada</span>
+                <span id="location">Taiwan</span>
               </p>
             </div>
           </div>

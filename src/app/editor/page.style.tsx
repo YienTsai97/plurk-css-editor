@@ -58,9 +58,21 @@ export const EditorPageStyle = ({
     body.language-large-font {
       font-size: 13px;
     }
-    #layout_content {
-      padding-top: 42px;
+    #layout_body {
       position: relative;
+    }
+    #layout_content_html,
+    #layout_content {
+      pointer-events: none;
+    }
+    #layout_content {
+      padding-top: 0;
+      position: relative;
+      z-index: 0;
+      isolation: isolate;
+    }
+    #layout_content > * {
+      pointer-events: auto;
     }
     .clearfix {
       clear: both;
