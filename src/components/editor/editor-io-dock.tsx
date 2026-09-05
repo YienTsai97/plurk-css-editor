@@ -7,6 +7,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -214,24 +215,22 @@ export const EditorIoDock = ({ onSkipDraftSave }: EditorIoDockProps) => {
               將還原為初始模板，並清除已匯入的 CSS 與手動樣式。此操作無法復原。
             </DialogDescription>
           </DialogHeader>
-          <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+          <DialogFooter>
             <button
               type="button"
+              className="dialog-btn-secondary"
+              onClick={() => setModal(null)}
+            >
+              取消
+            </button>
+            <button
+              type="button"
+              className="dialog-btn-danger"
               onClick={handleResetConfirm}
-              style={{
-                flex: 1,
-                padding: "10px 16px",
-                backgroundColor: DOCK_CORAL,
-                color: "#fff",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-                fontSize: "14px",
-              }}
             >
               確認回復
             </button>
-          </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

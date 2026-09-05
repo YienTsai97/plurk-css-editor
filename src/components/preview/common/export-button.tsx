@@ -2,8 +2,10 @@
 
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -98,19 +100,26 @@ export const ExportButton = ({ open, onOpenChange }: ExportButtonProps) => {
     }
   };
 
+  const primaryLabel =
+    exportFormat === "copy"
+      ? "複製 CSS"
+      : exportFormat === "download"
+        ? "下載 CSS 檔案"
+        : "生成分享連結";
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>匯出 CSS</DialogTitle>
-          <DialogDescription className="sr-only">
+          <DialogDescription>
             選擇複製、下載或產生分享連結後再執行匯出。
           </DialogDescription>
         </DialogHeader>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+        <DialogBody>
+          <div className="dialog-option-group">
+            <label className={`dialog-option-card${exportFormat === "copy" ? " is-selected" : ""}`}>
               <input
                 type="radio"
                 name="exportFormat"
@@ -121,7 +130,7 @@ export const ExportButton = ({ open, onOpenChange }: ExportButtonProps) => {
               <span>複製到剪貼簿</span>
             </label>
 
-            <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+            <label className={`dialog-option-card${exportFormat === "download" ? " is-selected" : ""}`}>
               <input
                 type="radio"
                 name="exportFormat"
@@ -132,7 +141,7 @@ export const ExportButton = ({ open, onOpenChange }: ExportButtonProps) => {
               <span>下載 .css 檔案</span>
             </label>
 
-            <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+            <label className={`dialog-option-card${exportFormat === "share" ? " is-selected" : ""}`}>
               <input
                 type="radio"
                 name="exportFormat"
@@ -144,7 +153,7 @@ export const ExportButton = ({ open, onOpenChange }: ExportButtonProps) => {
             </label>
           </div>
 
-          <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "12px" }}>
+          <label className="dialog-checkbox-row">
             <input
               type="checkbox"
               checked={includeComments}
@@ -153,42 +162,28 @@ export const ExportButton = ({ open, onOpenChange }: ExportButtonProps) => {
             <span>包含註解（標記來源）</span>
           </label>
 
-          <div
-            style={{
-              backgroundColor: "#f8f9fa",
-              padding: "12px",
-              borderRadius: "4px",
-              fontSize: "12px",
-              color: "#666",
-            }}
-          >
-            <p style={{ margin: "0 0 8px 0" }}><strong>匯出選項說明：</strong></p>
-            <ul style={{ margin: 0, paddingLeft: "20px" }}>
+          <div className="dialog-info-box">
+            <p><strong>匯出選項說明：</strong></p>
+            <ul>
               <li><strong>複製到剪貼簿：</strong> 直接複製 CSS 到剪貼簿</li>
               <li><strong>下載 .css 檔案：</strong> 下載 CSS 檔案到本地</li>
               <li><strong>生成分享連結：</strong> 創建可分享的 URL</li>
             </ul>
           </div>
+        </DialogBody>
 
+        <DialogFooter>
           <button
-            onClick={handleExport}
-            style={{
-              width: "100%",
-              padding: "10px 16px",
-              backgroundColor: "#FF574D",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-              fontSize: "14px",
-              fontWeight: 500,
-            }}
+            type="button"
+            className="dialog-btn-secondary"
+            onClick={() => onOpenChange(false)}
           >
-            {exportFormat === "copy" && "複製 CSS"}
-            {exportFormat === "download" && "下載 CSS 檔案"}
-            {exportFormat === "share" && "生成分享連結"}
+            取消
           </button>
-        </div>
+          <button type="button" className="dialog-btn-primary" onClick={handleExport}>
+            {primaryLabel}
+          </button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
