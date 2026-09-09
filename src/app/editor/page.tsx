@@ -9,12 +9,10 @@ import { ResponseCountStyles } from "@/components/preview/plurk-timeline/respons
 import { TimelineBackground } from "@/components/preview/plurk-timeline/timeline-background/timeline-background";
 import { PlurkTopBar } from "@/components/preview/plurk-top-bar";
 import { useCSSImporter } from "@/store/styleManager/styleManager";
-import { CssValue } from "@/types/css.type";
+import { analyzeImportedCss } from "@/utils/parseCssImport";
 import { useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
-
-type ParsedCssRule = { selector: string; properties: Record<string, CssValue> };
 
 const EditorPageContent = () => {
   const searchParams = useSearchParams();
@@ -24,7 +22,7 @@ const EditorPageContent = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const skipDraftSaveRef = useRef(false);
 
-  // 處理 URL 匯入
+  // 用途：?import= 與 localStorage 草稿都走同一套 parser，避免 url(https://...) 被截斷。
   useEffect(() => {
     const importParam = searchParams.get("import");
     if (importParam) {
@@ -36,7 +34,7 @@ const EditorPageContent = () => {
         } else {
           // 如果是 CSS 內容，直接匯入
           const decodedCSS = decodeURIComponent(importParam);
-          const cssRules = parseCSS(decodedCSS);
+          const cssRules = analyzeImportedCss(decodedCSS).rules;
           importCSS(cssRules);
           console.log("CSS import from URL:", cssRules.length, "rules");
         }
@@ -50,54 +48,12 @@ const EditorPageContent = () => {
     setIsLoaded(true);
   }, [searchParams, importCSS]);
 
-  // 解析 CSS 字串
-  const parseCSS = (cssString: string): ParsedCssRule[] => {
-    const rules: ParsedCssRule[] = [];
-
-    // 移除註解
-    const cleanCSS = cssString.replace(/\/\*[\s\S]*?\*\//g, "");
-
-    const cssRules = cleanCSS.match(/[^}]+}/g) || [];
-
-    cssRules.forEach((rule) => {
-      const selectorMatch = rule.match(/^([^{]+)/);
-      const propertiesMatch = rule.match(/\{([^}]+)\}/);
-
-      if (selectorMatch && propertiesMatch) {
-        const selector = selectorMatch[1].trim();
-        const propertiesText = propertiesMatch[1];
-
-        const properties: Record<string, CssValue> = {};
-        const propertyPairs = propertiesText
-          .split(";")
-          .filter((pair) => pair.trim());
-
-        propertyPairs.forEach((pair) => {
-          const [prop, value] = pair.split(":").map((s) => s.trim());
-          if (prop && value) {
-            const styleKey = prop.replace(/-([a-z])/g, (g) =>
-              g[1].toUpperCase(),
-            );
-            properties[styleKey] = value;
-          }
-        });
-
-        if (Object.keys(properties).length > 0) {
-          rules.push({ selector, properties });
-        }
-      }
-    });
-
-    return rules;
-  };
-
-  // 載入 localStorage 草稿
   const loadDraft = () => {
     try {
       const savedDraft = localStorage.getItem("plurk-css-editor-draft");
       if (savedDraft) {
         const { css } = JSON.parse(savedDraft);
-        const cssRules = parseCSS(css);
+        const cssRules = analyzeImportedCss(css).rules;
         importCSS(cssRules);
         console.log(
           "Loaded draft from localStorage:",
@@ -174,6 +130,7 @@ const EditorPageContent = () => {
             <PlurkDashboard />
             <PlurkFooter />
             <EditorIoDock
+              // 用途：回復模板後略過一次草稿寫回，避免剛清空又被 autosave 存回去。
               onSkipDraftSave={() => {
                 skipDraftSaveRef.current = true;
               }}

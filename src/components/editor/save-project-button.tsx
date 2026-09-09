@@ -19,6 +19,7 @@ type SaveProjectButtonProps = {
   onOpenChange: (open: boolean) => void;
 };
 
+/** 用途：把目前樣式存成本機或線上專案；未登入時線上儲存會停用。 */
 export const SaveProjectButton = ({ open, onOpenChange }: SaveProjectButtonProps) => {
   const { data: session } = useSession();
   const { getAllStyles } = useCSSImporter();

@@ -8,10 +8,12 @@ export const PlurkTimeline = () => {
         .timeline-holder {
           padding: 0 !important;
           overflow: visible;
-          height: 72vh;
+          height: 544px;
           min-height: 386px;
           max-height: 820px;
           position: relative;
+          /* 用途：河道自己的 stacking context，吉祥物與噗文 z-index 在這裡比較。 */
+          isolation: isolate;
           width: 100%;
           cursor: move;
         }
@@ -55,13 +57,18 @@ export const PlurkTimeline = () => {
           margin-left: -19px;
           margin-top: 4px;
         }
-        .timeline-cnt, .timeline-bg, .timeline-cnt .block_cnt, .timeline-bg .block_bg {
+        .timeline-cnt, .timeline-cnt .block_cnt, .timeline-bg, .timeline-bg .block_bg {
           position: absolute;
           height: 100% !important;
           width: 100%;
           left: 0;
           top: 0;
           overflow: visible !important;
+        }
+        /* 用途：stacking 建在 .timeline-holder，不在 .timeline-cnt，
+           讓吉祥物 #dynamic_logo 能跟 .plurk 比 z-index，而不被整層河道蓋住。 */
+        .timeline-bg, .timeline-bg .block_bg {
+          z-index: 0;
         }
         ._lc_ .timeline-bg {
           //background-color: #000;
@@ -79,14 +86,17 @@ export const PlurkTimeline = () => {
           overflow: hidden;
           bottom: -1px;
         }
-                  #dynamic_logo{
+        #dynamic_logo{
           cursor: move;
           position: absolute;
-          z-index: 10;
           margin-top: 12px;
           white-space: nowrap;
           right: 10px;
           display: inline-block;
+        }
+        :where(#dynamic_logo) {
+          /* 用途：:where 降低預設權重，使用者 CSS 的 #dynamic_logo { z-index } 才能蓋過預覽預設。 */
+          z-index: 1;
         }
       `}
       </style>

@@ -13,6 +13,7 @@ import { useCSSImporter } from "@/store/styleManager/styleManager";
 import { analyzeImportedCss } from "@/utils/parseCssImport";
 import { useEffect, useMemo, useState } from "react";
 
+/** 用途：保存最後一次確認匯入的原文，重新打開對話框時可接著改。 */
 export const IMPORTED_CSS_SOURCE_KEY = "plurk-css-editor-imported-source";
 
 const EXAMPLE_CSS = `.plurk_cnt {
@@ -25,6 +26,7 @@ type CssImportProps = {
   textareaResetToken?: number;
 };
 
+/** 用途：匯入對話框。貼上後即時分析，只有按確認才寫入 imported 層。 */
 export const CssImport = ({
   open,
   onOpenChange,
@@ -34,6 +36,7 @@ export const CssImport = ({
   const [clearedHint, setClearedHint] = useState(false);
   const { replaceImportedCSS, clearImportedCSS } = useCSSImporter();
 
+  // 用途：輸入中就分析，用來顯示被忽略的片段／實際會套用的內容；尚未寫入預覽。
   const analysis = useMemo(() => analyzeImportedCss(cssInput), [cssInput]);
 
   useEffect(() => {
@@ -120,6 +123,7 @@ export const CssImport = ({
 
           <p className="dialog-hint">{hintParts.join(" ")}</p>
 
+          {/* 用途：列出 parser 不會照原文套用的片段，例如 // 註解或拆不開的宣告。 */}
           {cssInput.trim() && analysis.ignored.length > 0 && (
             <div>
               <p className="dialog-label">以下內容不會依原文套用：</p>
@@ -131,6 +135,7 @@ export const CssImport = ({
             </div>
           )}
 
+          {/* 用途：只有解析結果與原文不同時才顯示，避免把完整 URL 等有效內容當成「備援預覽」。 */}
           {cssInput.trim() && analysis.showReconstructedPreview && (
             <div>
               <label className="dialog-label">實際會匯入的內容</label>

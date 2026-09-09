@@ -23,6 +23,7 @@ type EditorIoDockProps = {
   onSkipDraftSave: () => void;
 };
 
+/** 用途：編輯器右下角輸入／輸出入口。hover 或點擊展開匯入、回復、匯出、儲存。 */
 export const EditorIoDock = ({ onSkipDraftSave }: EditorIoDockProps) => {
   const { resetAllToInitial } = useCSSImporter();
   const hasExportableStyles = useStyleManager((s) => {
@@ -37,6 +38,7 @@ export const EditorIoDock = ({ onSkipDraftSave }: EditorIoDockProps) => {
 
   const [touchOpen, setTouchOpen] = useState(false);
   const [modal, setModal] = useState<IoModal>(null);
+  // 用途：回復模板後遞增，讓匯入 textarea 清掉上次貼上的原文。
   const [importResetToken, setImportResetToken] = useState(0);
 
   const isModalOpen = modal !== null;
@@ -152,6 +154,7 @@ export const EditorIoDock = ({ onSkipDraftSave }: EditorIoDockProps) => {
         className={dockClass}
         onMouseLeave={() => setTouchOpen(false)}
       >
+        {/* 用途：用最長按鈕文字撐開寬度，避免 hover 展開時選單左右跳動。 */}
         <div className="editor-io-dock-sizer" aria-hidden>
           {LONGEST_DOCK_LABEL}
         </div>
@@ -165,6 +168,7 @@ export const EditorIoDock = ({ onSkipDraftSave }: EditorIoDockProps) => {
           <button type="button" className="editor-io-dock-btn" onClick={() => openModal("export")}>
             匯出 CSS
           </button>
+          {/* 用途：沒有匯入或手動改動時不能存，避免寫入空專案。 */}
           <span title={hasExportableStyles ? undefined : "無改動"} style={{ display: "block", width: "100%" }}>
             <button
               type="button"

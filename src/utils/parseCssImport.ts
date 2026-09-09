@@ -1,5 +1,6 @@
 import { CssValue } from "../types/css.type";
 
+/** 用途：把 camelCase 屬性轉回 kebab-case，重建給使用者看的 CSS。 */
 const toCssProp = (camel: string) => camel.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase());
 
 export type ParsedCssRule = {
@@ -33,11 +34,22 @@ const fullLineSlashCommentRe = () => /^[ \t]*\/\/[^\r\n]*$/gm;
 const toCamelProp = (prop: string) =>
   prop.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
 
+/** 用途：只在第一個冒號切開「名稱: 值」，避免 url(https://...) 被截成 url(https。 */
+const splitDeclaration = (declaration: string) => {
+  const colonIndex = declaration.indexOf(":");
+  if (colonIndex === -1) return null;
+  const prop = declaration.slice(0, colonIndex).trim();
+  const value = declaration.slice(colonIndex + 1).trim();
+  if (!prop || !value) return null;
+  return { prop, value };
+};
+
 const truncateFragment = (text: string, max = 80) => {
   const oneLine = text.replace(/\s+/g, " ").trim();
   return oneLine.length > max ? `${oneLine.slice(0, max)}…` : oneLine;
 };
 
+/** 用途：依實際會套用的 rules 重建 CSS，給匯入對話框對照原文。 */
 export const reconstructCss = (rules: ParsedCssRule[]): string =>
   rules
     .map(({ selector, properties }) => {
@@ -48,7 +60,7 @@ export const reconstructCss = (rules: ParsedCssRule[]): string =>
     })
     .join("\n\n");
 
-/** Strip block comments and collapse trivial whitespace for equality checks. */
+/** 用途：去掉註解與空白差異，判斷要不要顯示「實際會匯入的內容」。 */
 export const normalizeCssForCompare = (css: string): string =>
   css
     .replace(blockCommentRe(), "")
@@ -76,6 +88,7 @@ const extractFullLineSlashComments = (css: string) => {
   return { lines, css: next };
 };
 
+/** 用途：解析貼上的 CSS，產出可套用的 rules，並標出會被忽略或改寫的片段。 */
 export const analyzeImportedCss = (cssString: string): CssImportAnalysis => {
   const empty: CssImportAnalysis = {
     rules: [],
@@ -134,9 +147,9 @@ export const analyzeImportedCss = (cssString: string): CssImportAnalysis => {
 
       propertyPairs.forEach((pair) => {
         const trimmed = pair.trim();
-        const [prop, value] = trimmed.split(":").map((s) => s.trim());
-        if (prop && value) {
-          properties[toCamelProp(prop)] = value;
+        const parsed = splitDeclaration(trimmed);
+        if (parsed) {
+          properties[toCamelProp(parsed.prop)] = parsed.value;
         } else if (trimmed) {
           ignored.push({
             kind: "dropped-property",

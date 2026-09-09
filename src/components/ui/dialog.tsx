@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 
 export const DOCK_CORAL = "#FF574D"
 
+/** 用途：編輯器共用 dialog 外觀與按鈕樣式，讓匯入／匯出／儲存／回復同一套珊瑚紅 UI。 */
 function DialogStyles() {
   return (
     <style>{`
@@ -376,6 +377,7 @@ function DialogContent({
     <DialogPortal>
       <DialogStyles />
       <DialogOverlay />
+      {/* 用途：只允許 × 或 Esc 關閉，避免點 overlay 誤關正在編輯的匯入／匯出內容。 */}
       <DialogPrimitive.Content
         data-slot="dialog-content"
         onPointerDownOutside={(event) => event.preventDefault()}

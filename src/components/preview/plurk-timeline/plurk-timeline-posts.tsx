@@ -233,12 +233,13 @@ const PlurkTimelinePosts = () => {
         {`
         .timeline-cnt .plurk {
           position: absolute;
-          z-index: 5;
           cursor: pointer;
         }
         .plurk {
           color: #111;
           white-space: nowrap;
+          /* 用途：噗文 z-index 放在 .plurk，不要綁 .timeline-cnt，以免整層蓋住吉祥物。 */
+          z-index: 5;
         }
         .timeline-cnt .display {
           width: 380px;
@@ -246,6 +247,9 @@ const PlurkTimelinePosts = () => {
         }
         .timeline-cnt .plurk_box {
           width: 503px;
+        }
+        :where(.timeline-cnt .plurk_box) {
+          /* 用途：:where 降低展開噗預設 z-index 權重，讓使用者 CSS 可覆寫。 */
           z-index: 10;
         }
         `}

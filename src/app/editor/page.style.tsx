@@ -58,9 +58,12 @@ export const EditorPageStyle = ({
     body.language-large-font {
       font-size: 13px;
     }
+    /* 用途：讓 sticky 頂欄有完整高度可點；內容層自己做 stacking，避免蓋住 #top_bar。 */
     #layout_body {
       position: relative;
+      height: 100%;
     }
+    /* 用途：預覽容器預設不攔點擊，子元素再開啟，頂欄連結才點得到。 */
     #layout_content_html,
     #layout_content {
       pointer-events: none;

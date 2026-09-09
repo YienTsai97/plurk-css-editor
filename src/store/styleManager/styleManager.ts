@@ -114,6 +114,7 @@ type StyleManagerState = {
 
   // 新增：CSS 導入功能
   importCSS: (cssRules: Array<{ selector: string; properties: Record<string, CssValue> }>) => void
+  /** 用途：先清掉上一輪 imported，再套用這次匯入，避免舊規則殘留。 */
   replaceImportedCSS: (cssRules: Array<{ selector: string; properties: Record<string, CssValue> }>) => void
 
   // 新增：設置 CSS 變數（高效覆蓋樣式）
@@ -123,7 +124,7 @@ type StyleManagerState = {
   clearImportedCSS: () => void
   // 新增：清除導入並回復 initial
   resetImportedToInitial: () => void
-  // 回復為初始模板：清 imported + 還原 manual
+  /** 用途：回復為初始模板：清 imported 與手動樣式，並還原 registered 預設。 */
   resetAllToInitial: () => void
 
   //Read (hook)

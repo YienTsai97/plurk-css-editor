@@ -171,6 +171,7 @@ export const createImportSlice = (set: SliceSet, get: SliceGet): Partial<StyleMa
     get().clearImportedCSS();
   },
 
+  /** 用途：先清掉上一輪 imported，再套用這次匯入，避免舊規則殘留。 */
   replaceImportedCSS: (cssRules: CSSRule[]) => {
     get().clearImportedCSS();
     if (cssRules.length > 0) {
