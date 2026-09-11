@@ -11,14 +11,13 @@ export default async function Home() {
         {/* Header */}
         <div className="text-center mb-16">
           <h1 className="text-5xl font-bold text-gray-900 mb-6">
-            Plurk CSS Editor
+            Plurk Styler
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            強大的 Plurk 樣式編輯器，讓你輕鬆創建、編輯和管理自定義 CSS 樣式。
-            支援即時預覽、樣式匯入匯出、專案管理等功能。
+            在真實樣貌的預覽上右鍵改樣式，匯出 CSS，貼回噗浪就生效。
+            支援即時預覽、樣式匯入匯出與草稿儲存。
           </p>
-        </div>        +
-
+        </div>
         {/* Main Actions */}
         <div className="grid md:grid-cols-2 gap-8 mb-16">
           {/* Public Editor */}

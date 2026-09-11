@@ -49,7 +49,7 @@ export const PlurkFooter = () => (
             ©<span>&nbsp;</span>
             <span id="footer-year">
               {new Date().getFullYear()}
-              <span> Plurk CSS Generator by</span>
+              <span> Plurk Styler by</span>
               <a href="https://www.plurk.com/laviaco" target="_blank">
                 @laviaco
               </a>

@@ -1,4 +1,4 @@
-![Plurk Styler](./public/plurk-styler.svg)
+<img src="./public/plurk-styler.svg" alt="Plurk Styler" width="120" />
 
 # Plurk Styler
 
@@ -12,7 +12,7 @@
 
 ## 這是什麼
 
-不用手寫選擇器，也能做出可上站的噗浪自訂佈景風格。  
+不用手寫選擇器，也能做出可上站的噗浪自訂佈景風格。
 畫面中央是模擬個人主頁；右鍵呼叫對應控制項，預覽立刻更新，再匯出 CSS 貼回噗浪。
 
 目前開放**免登入編輯器**。會員與雲端專案管理尚未對外開放；開放後仍會保留免登入編輯器給所有訪客使用。

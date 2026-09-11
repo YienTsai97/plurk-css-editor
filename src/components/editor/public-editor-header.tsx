@@ -84,7 +84,7 @@
 //             lineHeight: "1",
 //           }}
 //         >
-//           Plurk CSS Editor
+//           Plurk Styler
 //         </h1>
 //         <div style={{ display: "flex", gap: "12px", fontSize: "12px" }}>
 //           <span>

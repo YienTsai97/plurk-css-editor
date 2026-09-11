@@ -3,8 +3,8 @@ import "./globals.css";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "Plurk CSS Editor",
-  description: "Generated custom CSS for Plurk",
+  title: "Plurk Styler",
+  description: "在真實樣貌的預覽上右鍵改樣式，匯出 CSS，貼回噗浪就生效。",
 };
 
 export default function RootLayout({
