@@ -20,7 +20,8 @@ const RightAward = () => {
     cursor: default;
 }
 .cmp_10_days {
-    background: transparent url(https://s.plurk.com/badges_sprite/781a2d28dda58209317a.png) 0 -848px no-repeat;
+    // background: transparent url(https://s.plurk.com/badges_sprite/781a2d28dda58209317a.png) 0 -848px no-repeat;
+    background: transparent url(/badge.png);
     width: 39px;
     font-size: 1px;
     height: 39px;
@@ -35,24 +36,6 @@ const RightAward = () => {
 #plurk-dashboard .link_arrow i {
     margin-right: 5px;
 }
-.pif-arrow-points:before {
-    content: "\f005";
-}
-[class^="pif-"]:before, [class*=" pif-"]:before {
-    display: inline-block;
-    font-family: "PlurkIconFont";
-    font-style: normal;
-    font-weight: normal;
-    font-feature-settings: normal;
-    font-variant: normal;
-    line-height: 1;
-    text-decoration: inherit;
-    text-rendering: optimizeLegibility;
-    text-transform: none;
-    -moz-osx-font-smoothing: grayscale;
-    -webkit-font-smoothing: antialiased;
-    font-smoothing: antialiased;
-}
 #plurk-dashboard .link_arrow {
   display: inline-flex;
   align-items: center;
@@ -64,6 +47,9 @@ const RightAward = () => {
         <div className="segment-content">
           <div id="dash-award">
             <div className="award_bar clearfix">
+              <div className="cmp_10_days"></div>
+              <div className="cmp_10_days"></div>
+              <div className="cmp_10_days"></div>
               <div className="cmp_10_days"></div>
             </div>
             <a className="link_arrow" target="_blank">

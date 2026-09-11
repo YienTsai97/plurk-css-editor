@@ -51,7 +51,8 @@ cspell.json
 /src/generated/prisma
 *.md
 !README.md
-# 內部文件不納入版控
+# 內部文件全部不納入版控（僅本機保留）
+/doc/
 /docs/
 
 #Windows

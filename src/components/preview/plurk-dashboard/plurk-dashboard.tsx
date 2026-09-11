@@ -1,8 +1,25 @@
 "use client";
+
+import { EditorMenuContent } from "@/components/editor/editor-context-menu";
+import {
+  ContextMenu,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
+import { useState } from "react";
+import { DashboardContextMenuContent } from "./dashboard-context-menu-content";
 import DashboardLeft from "./dashboard-left";
 import DashboardRight from "./dashboard-right";
+import {
+  EMPTY_DASHBOARD_SECTION_MENUS,
+  getDashboardSectionMenuFlags,
+  type DashboardSectionMenuFlags,
+} from "./dashboard-section-menu-flags";
 
 export const PlurkDashboard = () => {
+  const [sectionMenus, setSectionMenus] = useState<DashboardSectionMenuFlags>(
+    EMPTY_DASHBOARD_SECTION_MENUS,
+  );
+
   return (
     <>
       <style>
@@ -25,12 +42,7 @@ export const PlurkDashboard = () => {
 #plurk-dashboard a {
     color: #E88D43;
 }
-.dash-segment .segment-content {
-    background: #FFF;
-    margin-top: 10px;
-    padding: 5px;
-    border-radius: 10px;
-}
+/* .segment-content 背景／圓角／padding／上邊距改由 DashboardSegmentStyles 常駐輸出 */
 #plurk-dashboard:after, .segment-content:after {
     content: '';
     clear: both;
@@ -90,52 +102,24 @@ p {
       </style>
       <div id="dashboard_holder">
         {" "}
-        <div id="plurk-dashboard" className="own">
-          {/* <div className="dash-group-form">
-          <div className="dash-segment dash-segment-post">
-            <div className="segment-content">
-              <div id="plurk_form" style={{ display: "block" }}>
-                <form className="plurkaction pane" action="/" onSubmit={() => false} id="pane_plurk">
-                  <div id="main_poster">
-                    <div className="plurkForm">
-                      <div className="drop_indicator">拖放圖片到此上傳</div>
-                      <div className="click submit_img submit_img_color" data-qual="freestyle">Plurk</div>
-                      <div className="input_holder">
-                        <div className="qual_holder"><div className="dd_img m_qualifier q_freestyle" data-qual="freestyle">
-                          <span style={{ display: "none" }}></span><i className="pif-dropdown"></i>
-                        </div>
-                        </div>
-                        <div className="textarea_holder">
-                          <textarea name="content" className="content" id="input_big" style={{ height: "37px" }}></textarea>
-                        </div>
-                        <div className="share_holder"><div className="preview-list" style={{ display: "none" }}><ul><li className="add_photo">+</li></ul>
-                          <input name="image" type="file" accept="image/*" multiple style={{ opacity: 0, visibility: "hidden", display: "none" }} /></div></div>
-                      </div>
-                      <ul className="icons_holder">
-                        <li className="cmp_emoticon_off pif-emoticon"></li>
-                        <li className="cmp_media_off pif-media"></li>
-                        <li className="cmp_anynomous_off pif-anynomous"></li>
-                        <li className="cmp_poll_off pif-poll"></li><li className="cmp_privacy_off pif-privacy"></li>
-                      </ul>
-                      <div className="plurk_to">
-                        <span className="plurk-to-privacy pif-privacy hide"></span>
-                        <span className="plurk-to-response pif-message-private hide"></span>
-                        <span className="plurk-to-replurk pif-follow-replurk-cancel hide">不可轉噗</span>
-                        <span className="plurk-to-porn pif-porn hide">成人內容</span>
-                        <span className="plurk-to-anonymous pif-info hide"><a href="/anonymous-rule" target="_blank">發文規則</a></span>
-                      </div>
-                      <div className="char_updater"></div>
-                    </div>
-                  </div>
-                </form>
-              </div>
+        <ContextMenu>
+          <ContextMenuTrigger asChild>
+            <div
+              id="plurk-dashboard"
+              className="own"
+              onContextMenu={(event) => {
+                setSectionMenus(getDashboardSectionMenuFlags(event.target));
+              }}
+            >
+              <DashboardLeft />
+              <DashboardRight />
             </div>
-          </div>
-        </div> */}
-          <DashboardLeft />
-          <DashboardRight />
-        </div>
-      </div >
+          </ContextMenuTrigger>
+          <EditorMenuContent>
+            <DashboardContextMenuContent sectionMenus={sectionMenus} />
+          </EditorMenuContent>
+        </ContextMenu>
+      </div>
     </>
   );
 };

@@ -18,6 +18,13 @@ const RightFriends = () => {
 .friend_holder {
     clear: both;
 }
+.friend_holder img
+Specificity: (0,1,1)
+ {
+    width: 35px;
+    height: 35px;
+    border: 0;
+}
 #plurk-dashboard .dash-segment-friends #dash-friends #friend_managment {
     margin-top: 5px;
     text-align: center;

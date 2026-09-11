@@ -1,4 +1,16 @@
 "use client";
+import {
+  DASHBOARD_SHELL_HOVER_SELECTOR,
+  DASHBOARD_SHELL_SELECTOR,
+} from "@/components/preview/plurk-dashboard/dashboard-shell/dashboard-shell.constants";
+import { ensureDashboardShellTransitionExport } from "@/components/preview/plurk-dashboard/dashboard-shell/dashboard-shell.utils";
+import {
+  DYNAMIC_LOGO_IMG_SELECTOR,
+  DYNAMIC_LOGO_SELECTOR,
+} from "@/components/preview/plurk-timeline/dynamic-logo/dynamic-logo.constants";
+import { formatDynamicLogoExportBlock } from "@/components/preview/plurk-timeline/dynamic-logo/dynamic-logo.utils";
+import { TIMELINE_BACKGROUND_SELECTOR } from "@/components/preview/plurk-timeline/timeline-background/timeline-background.constants";
+import { formatTimelineBackgroundExportBlock } from "@/components/preview/plurk-timeline/timeline-background/timeline-background.utils";
 import { CssValue, StyleKey } from "@/types/css.type";
 import { shallow } from "zustand/shallow";
 import { createWithEqualityFn } from "zustand/traditional";
@@ -17,8 +29,68 @@ type StyleEntry = {
 
 const RESPONSE_COUNT_EXPORT_SELECTOR = ".timeline-cnt .response_count";
 const RESPONSE_COUNT_NEW_EXPORT_SELECTOR = ".timeline-cnt .new .response_count";
+const IMPORTED_STYLE_TAG_ID = "imported-css-styles";
+
+/** 用途：對齊 `#dynamic_logo>img` → store key；並拆 `background` 縮寫。 */
+const normalizeImportedLogoRule = (rule: {
+  selector: string;
+  properties: Record<string, CssValue>;
+}) => {
+  const selector = rule.selector
+    .replace(/#dynamic_logo\s*>\s*img/gi, "#dynamic_logo > img")
+    .trim();
+  const properties = { ...rule.properties };
+  const rawBg = properties.background;
+  if (rawBg !== undefined) {
+    delete properties.background;
+    const text = String(rawBg).trim();
+    if (!text || text === "none") {
+      if (properties.backgroundImage === undefined) properties.backgroundImage = "none";
+    } else {
+      const urlMatch = text.match(/url\(\s*(['"]?)(.*?)\1\s*\)/i);
+      if (urlMatch && properties.backgroundImage === undefined) {
+        properties.backgroundImage = urlMatch[0];
+      }
+      const repeatMatch = text.match(
+        /\b(repeat-x|repeat-y|no-repeat|repeat|space|round)\b/i,
+      );
+      if (repeatMatch && properties.backgroundRepeat === undefined) {
+        properties.backgroundRepeat = repeatMatch[1].toLowerCase();
+      }
+    }
+  }
+  return { selector, properties };
+};
 
 const toCssPropName = (prop: string) => prop.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase());
+
+const makeImportedCssVarName = (selector: string, prop: string) => {
+  const cleanSelector = selector.replace(/[^a-zA-Z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+  return `--${cleanSelector}-${toCssPropName(prop)}`;
+};
+
+const removeImportedStyleTag = () => {
+  if (typeof document === "undefined") return;
+  const existingStyle = document.getElementById(IMPORTED_STYLE_TAG_ID);
+  if (existingStyle) existingStyle.remove();
+};
+
+const removeImportedCssVars = (keys: Array<{ selector: string; prop: string }>) => {
+  if (typeof document === "undefined") return;
+  keys.forEach(({ selector, prop }) => {
+    document.documentElement.style.removeProperty(makeImportedCssVarName(selector, prop));
+  });
+};
+
+const collectImportedKeys = (allStyles: Map<string, Map<string, StyleEntry>>) => {
+  const importedKeys: Array<{ selector: string; prop: string }> = [];
+  allStyles.forEach((props, selector) => {
+    props.forEach((entry, prop) => {
+      if (entry.source === "imported") importedKeys.push({ selector, prop });
+    });
+  });
+  return importedKeys;
+};
 
 const getSourceTag = (prop: string, source: StyleSource) => {
   if (source === "imported") return `[IMPORTED] ${prop}`;
@@ -85,14 +157,18 @@ type StyleManagerState = {
 
   // 新增：CSS 導入功能
   importCSS: (cssRules: Array<{ selector: string; properties: Record<string, CssValue> }>) => void
+  /** 用途：先清掉上一輪 imported，再套用這次匯入，避免舊規則殘留。 */
+  replaceImportedCSS: (cssRules: Array<{ selector: string; properties: Record<string, CssValue> }>) => void
 
   // 新增：設置 CSS 變數（高效覆蓋樣式）
   setCSSVariable: (selector: string, prop: string, value: CssValue) => void
 
-  // 新增：清除導入的 CSS 樣式
+  // 新增：清除導入的 CSS 樣式（不動 manual / registered）
   clearImportedCSS: () => void
   // 新增：清除導入並回復 initial
   resetImportedToInitial: () => void
+  /** 用途：回復為初始模板：清 imported 與手動樣式，並還原 registered 預設。 */
+  resetAllToInitial: () => void
 
   //Read (hook)
   getProp: (selector: string, prop: StyleKey) => CssValue | undefined
@@ -115,9 +191,11 @@ export const useStyleManager = createWithEqualityFn<StyleManagerState>((set, get
         newStyleSources[selector] = {};
       }
 
-      // 標記為已註冊
+      // 只補 registered；勿蓋掉已匯入／手動的來源標記
       Object.keys(init).forEach(prop => {
-        newStyleSources[selector][prop] = 'registered';
+        const existing = newStyleSources[selector][prop];
+        if (existing === "imported" || existing === "manual") return;
+        newStyleSources[selector][prop] = "registered";
       });
 
       const newAllStyles = new Map(state.allStyles);
@@ -125,16 +203,28 @@ export const useStyleManager = createWithEqualityFn<StyleManagerState>((set, get
         newAllStyles.set(selector, new Map());
       }
 
+      const now = Date.now();
       Object.entries(init).forEach(([prop, value]) => {
+        const existing = newAllStyles.get(selector)!.get(prop);
+        // 用途：feature remount 時不可把 draft／上傳寫入的 manual／imported 蓋成 registered 預設。
+        if (existing && (existing.source === "imported" || existing.source === "manual")) {
+          return;
+        }
         newAllStyles.get(selector)!.set(prop, {
           value,
-          source: 'registered',
-          timestamp: Date.now()
+          source: "registered",
+          timestamp: now,
         });
       });
 
       // merged baseline: old initial + new init（須攤平至 selector，勿用 { mergedInitial } 簡寫成巢狀 key）
       const mergedInitial = { ...(state.initial[selector] || {}), ...init } as StyleProps;
+      // 用途：保留已有 current（draft import／上傳）；只補尚未出現的預設 key。
+      // 舊實作整包換成 mergedInitial，會在子元件 mount 時清掉父層剛 import 的值。
+      const mergedCurrent = {
+        ...mergedInitial,
+        ...(state.current[selector] || {}),
+      } as StyleProps;
 
       return {
         initial: {
@@ -143,7 +233,7 @@ export const useStyleManager = createWithEqualityFn<StyleManagerState>((set, get
         },
         current: {
           ...state.current,
-          [selector]: mergedInitial,
+          [selector]: mergedCurrent,
         },
         styleSources: newStyleSources,
         allStyles: newAllStyles
@@ -195,21 +285,18 @@ export const useStyleManager = createWithEqualityFn<StyleManagerState>((set, get
       const current = { ...state.current };
       const allStyles = new Map(state.allStyles);
       const styleSources = { ...state.styleSources };
+      const normalizedRules = cssRules.map(normalizeImportedLogoRule);
 
       // 注入 CSS 規則到頁面
       if (typeof document !== 'undefined') {
-        // 移除舊的導入樣式
-        const existingStyle = document.getElementById('imported-css-styles');
-        if (existingStyle) {
-          existingStyle.remove();
-        }
+        removeImportedStyleTag();
 
         // 創建新的樣式標籤
         const styleElement = document.createElement('style');
-        styleElement.id = 'imported-css-styles';
+        styleElement.id = IMPORTED_STYLE_TAG_ID;
 
         // 生成 CSS 規則
-        const cssRulesText = cssRules.map(({ selector, properties }) => {
+        const cssRulesText = normalizedRules.map(({ selector, properties }) => {
           const propertiesText = Object.entries(properties)
             .map(([prop, value]) => {
               const cssProp = prop.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase());
@@ -223,7 +310,7 @@ export const useStyleManager = createWithEqualityFn<StyleManagerState>((set, get
         document.head.appendChild(styleElement);
       }
 
-      cssRules.forEach(({ selector, properties }) => {
+      normalizedRules.forEach(({ selector, properties }) => {
         if (!current[selector]) {
           current[selector] = {};
         }
@@ -256,10 +343,7 @@ export const useStyleManager = createWithEqualityFn<StyleManagerState>((set, get
             timestamp: Date.now()
           });
 
-          // 自動設置 CSS 變數（高效覆蓋）
-          // 處理複雜選擇器，創建有效的 CSS 變數名稱
-          const cleanSelector = selector.replace(/[^a-zA-Z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-          const cssVarName = `--${cleanSelector}-${prop.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase())}`;
+          const cssVarName = makeImportedCssVarName(selector, prop);
           if (typeof document !== 'undefined') {
             document.documentElement.style.setProperty(cssVarName, String(value));
           }
@@ -269,14 +353,10 @@ export const useStyleManager = createWithEqualityFn<StyleManagerState>((set, get
       return { current, allStyles, styleSources };
     }),
 
-  // 新增：設置 CSS 變數（高效覆蓋樣式）
   setCSSVariable: (selector: string, prop: string, value: CssValue) =>
     set(state => {
-      // 創建 CSS 變數名稱
-      const cleanSelector = selector.replace(/[^a-zA-Z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-      const cssVarName = `--${cleanSelector}-${prop.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase())}`;
+      const cssVarName = makeImportedCssVarName(selector, prop);
 
-      // 設置 CSS 變數到 document.documentElement
       if (typeof document !== 'undefined') {
         document.documentElement.style.setProperty(cssVarName, String(value));
       }
@@ -284,29 +364,40 @@ export const useStyleManager = createWithEqualityFn<StyleManagerState>((set, get
       return state;
     }),
 
-  // 新增：清除導入的 CSS 樣式
+  // 只清 imported 層：style tag、store keys、CSS 變數；不動 manual / registered
   clearImportedCSS: () =>
     set(state => {
-      if (typeof document !== 'undefined') {
-        const existingStyle = document.getElementById('imported-css-styles');
-        if (existingStyle) {
-          existingStyle.remove();
-        }
-      }
+      const importedKeys = collectImportedKeys(state.allStyles);
+      removeImportedStyleTag();
+      removeImportedCssVars(importedKeys);
 
-      // 清除導入的樣式狀態
       const current = { ...state.current };
       const allStyles = new Map(state.allStyles);
       const styleSources = { ...state.styleSources };
 
-      // 移除所有 imported 樣式
       allStyles.forEach((props, selector) => {
         const newProps = new Map();
         props.forEach((entry, prop) => {
           if (entry.source !== 'imported') {
             newProps.set(prop, entry);
+            return;
+          }
+
+          if (!current[selector]) return;
+
+          const initialValue = state.initial[selector]?.[prop as StyleKey];
+          if (initialValue !== undefined) {
+            current[selector] = {
+              ...current[selector],
+              [prop]: initialValue,
+            };
+          } else {
+            const nextSelector = { ...(current[selector] as StyleProps) } as Record<string, CssValue>;
+            delete nextSelector[prop];
+            current[selector] = nextSelector;
           }
         });
+
         if (newProps.size > 0) {
           allStyles.set(selector, newProps);
         } else {
@@ -314,14 +405,12 @@ export const useStyleManager = createWithEqualityFn<StyleManagerState>((set, get
         }
       });
 
-      // 清除 styleSources 中的 imported 標記
       Object.keys(styleSources).forEach(selector => {
         Object.keys(styleSources[selector]).forEach(prop => {
           if (styleSources[selector][prop] === 'imported') {
             delete styleSources[selector][prop];
           }
         });
-        // 如果該選擇器沒有樣式了，移除整個選擇器
         if (Object.keys(styleSources[selector]).length === 0) {
           delete styleSources[selector];
         }
@@ -330,58 +419,42 @@ export const useStyleManager = createWithEqualityFn<StyleManagerState>((set, get
       return { current, allStyles, styleSources };
     }),
 
-  // 新增：清除導入並回復 initial
-  resetImportedToInitial: () =>
+  resetImportedToInitial: () => {
+    get().clearImportedCSS();
+  },
+
+  replaceImportedCSS: (cssRules) => {
+    get().clearImportedCSS();
+    if (cssRules.length > 0) {
+      get().importCSS(cssRules);
+    }
+  },
+
+  resetAllToInitial: () =>
     set(state => {
-      if (typeof document !== 'undefined') {
-        const existingStyle = document.getElementById('imported-css-styles');
-        if (existingStyle) {
-          existingStyle.remove();
-        }
-      }
+      const importedKeys = collectImportedKeys(state.allStyles);
+      removeImportedStyleTag();
+      removeImportedCssVars(importedKeys);
 
-      const current = { ...state.current };
-      const allStyles = new Map(state.allStyles);
-      const styleSources = { ...state.styleSources };
-
-      // 移除所有 imported 樣式，並回復到 initial（若有）
-      allStyles.forEach((props, selector) => {
-        const newProps = new Map();
-        props.forEach((entry, prop) => {
-          if (entry.source !== 'imported') {
-            newProps.set(prop, entry);
-          } else if (current[selector]) {
-            const initialValue = state.initial[selector]?.[prop as StyleKey];
-            if (initialValue !== undefined) {
-              current[selector] = {
-                ...current[selector],
-                [prop]: initialValue
-              };
-            } else {
-              const nextSelector = { ...(current[selector] as StyleProps) } as Record<string, CssValue>;
-              delete nextSelector[prop];
-              current[selector] = nextSelector;
-            }
-          }
-        });
-
-        if (newProps.size > 0) {
-          allStyles.set(selector, newProps);
-        } else {
-          allStyles.delete(selector);
-        }
+      const current: StyleDict = {};
+      Object.keys(state.initial).forEach((selector) => {
+        current[selector] = { ...state.initial[selector] };
       });
 
-      // 清除 styleSources 中的 imported 標記
-      Object.keys(styleSources).forEach(selector => {
-        Object.keys(styleSources[selector]).forEach(prop => {
-          if (styleSources[selector][prop] === 'imported') {
-            delete styleSources[selector][prop];
-          }
+      const allStyles = new Map<string, Map<string, StyleEntry>>();
+      const styleSources: Record<string, Record<string, StyleSource>> = {};
+      const now = Date.now();
+
+      Object.entries(state.initial).forEach(([selector, props]) => {
+        const nextProps = new Map<string, StyleEntry>();
+        const sources: Record<string, StyleSource> = {};
+        Object.entries(props).forEach(([prop, value]) => {
+          if (value === undefined) return;
+          nextProps.set(prop, { value, source: "registered", timestamp: now });
+          sources[prop] = "registered";
         });
-        if (Object.keys(styleSources[selector]).length === 0) {
-          delete styleSources[selector];
-        }
+        allStyles.set(selector, nextProps);
+        styleSources[selector] = sources;
       });
 
       return { current, allStyles, styleSources };
@@ -425,6 +498,15 @@ export const useStyleManager = createWithEqualityFn<StyleManagerState>((set, get
       selectorGroups.get(selector)!.set(prop, entry);
     });
 
+    // 用途：平常／hover opacity 成對匯出並補 transition，否則 Plurk 缺 :hover 或動畫。
+    ensureDashboardShellTransitionExport(
+      selectorGroups,
+      state.current[DASHBOARD_SHELL_SELECTOR],
+      state.initial[DASHBOARD_SHELL_SELECTOR],
+      state.current[DASHBOARD_SHELL_HOVER_SELECTOR],
+      state.initial[DASHBOARD_SHELL_HOVER_SELECTOR],
+    );
+
     const responseCountProps = selectorGroups.get(RESPONSE_COUNT_EXPORT_SELECTOR);
     const responseCountNewProps = selectorGroups.get(RESPONSE_COUNT_NEW_EXPORT_SELECTOR);
     const handledSelectors = new Set<string>();
@@ -452,9 +534,31 @@ export const useStyleManager = createWithEqualityFn<StyleManagerState>((set, get
       handledSelectors.add(RESPONSE_COUNT_NEW_EXPORT_SELECTOR);
     }
 
+    // 噗寶自定義：有圖時走嚴格匯出格式（中文註解 + background shorthand + shell）
+    const dynamicLogoProps = selectorGroups.get(DYNAMIC_LOGO_SELECTOR);
+    const dynamicLogoImgProps = selectorGroups.get(DYNAMIC_LOGO_IMG_SELECTOR);
+    if (dynamicLogoProps || dynamicLogoImgProps) {
+      const block = formatDynamicLogoExportBlock(
+        dynamicLogoProps ?? new Map(),
+        dynamicLogoImgProps,
+      );
+      if (block) {
+        cssOutput.push(block);
+        handledSelectors.add(DYNAMIC_LOGO_SELECTOR);
+        handledSelectors.add(DYNAMIC_LOGO_IMG_SELECTOR);
+      }
+    }
+
     // 生成 CSS 和 tags
     selectorGroups.forEach((props, selector) => {
       if (handledSelectors.has(selector)) return;
+
+      // 河道背景走固定順序匯出，避免 formatCssBlock 字母排序打亂 shell / background
+      if (selector === TIMELINE_BACKGROUND_SELECTOR) {
+        const block = formatTimelineBackgroundExportBlock(props);
+        if (block) cssOutput.push(block);
+        return;
+      }
 
       const block = formatCssBlock(selector, props);
       if (block) cssOutput.push(block);
@@ -494,10 +598,19 @@ export function useStyleProp(selector: string, prop: StyleKey) {
 // 新增：CSS 導入的 hook
 export function useCSSImporter() {
   const importCSS = useStyleManager(s => s.importCSS);
+  const replaceImportedCSS = useStyleManager(s => s.replaceImportedCSS);
   const getAllStyles = useStyleManager(s => s.getAllStyles);
   const clearImportedCSS = useStyleManager(s => s.clearImportedCSS);
   const resetImportedToInitial = useStyleManager(s => s.resetImportedToInitial);
+  const resetAllToInitial = useStyleManager(s => s.resetAllToInitial);
 
-  return { importCSS, getAllStyles, clearImportedCSS, resetImportedToInitial };
+  return {
+    importCSS,
+    replaceImportedCSS,
+    getAllStyles,
+    clearImportedCSS,
+    resetImportedToInitial,
+    resetAllToInitial,
+  };
 }
 

@@ -11,13 +11,6 @@ const hashtag = (label: string, href: string) => (
   </span>
 )
 
-const pictureLink = (href: string, src: string) => (
-  <a href={href} className="ex_link pictureservices" rel="nofollow">
-    {/* eslint-disable-next-line @next/next/no-img-element */}
-    <img src={src} alt="" height={48} />
-  </a>
-)
-
 const metaLink = (href: string, imageSrc: string, label: string) => (
   <a href={href} className="ex_link meta" rel="nofollow" target="_blank">
     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -28,7 +21,7 @@ const metaLink = (href: string, imageSrc: string, label: string) => (
 
 const whisperPost: PostData = {
   pid: "356967425732085",
-  avatarUrl: "https://avatars.plurk.com/99999-small4626258.gif",
+  avatarUrl: "/anonymous.png",
   displayName: "ಠ_ಠ",
   nameColor: "#AE00B0",
   qualifier: { text: "偷偷說", className: "q_whispers" },
@@ -38,16 +31,9 @@ const whisperPost: PostData = {
       {hashtag("#售噗幣", "/search?q=售噗幣")}{" "}
       {hashtag("#噗幣交易河", "/search?q=噗幣交易河")}
       <br />
-      5{" "}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        className="emoticon_my"
-        src="https://emos.plurk.com/631f7b28258755dc72ad5380be2eb362_w20_h20.gif"
-        width={20}
-        height={20}
-        alt=""
-      />
-      {" "}240
+      <span style={{ whiteSpace: "nowrap" }}>
+        5 <img className="emoticon_my" src="/coin.png" width={20} height={20} alt="" /> = 240
+      </span>
       <br />
       剩1組
     </>
@@ -65,15 +51,12 @@ const whisperPost: PostData = {
 
 const mutedPost: PostData = {
   pid: "354208900685065",
-  avatarUrl: "https://s.plurk.com/c8980959827c3c923bdd.jpg",
-  displayName: "ptestcss",
+  avatarUrl: "/profile_icon.png",
+  displayName: "我的帳號",
   content: (
     <>
-      消音測試！{" "}
-      {pictureLink(
-        "https://images.plurk.com/32XPiaHJCf5pP7gZCgO3hR.png",
-        "https://images.plurk.com/mx_32XPiaHJCf5pP7gZCgO3hR.jpg"
-      )}
+      這是一則消音噗！<br />
+      右鍵設置透明度~
     </>
   ),
   showEdit: true,
@@ -87,17 +70,13 @@ const mutedPost: PostData = {
 
 const r18Post: PostData = {
   pid: "356966834913331",
-  avatarUrl: "https://s.plurk.com/c8980959827c3c923bdd.jpg",
-  displayName: "ptestcss",
+  avatarUrl: "/profile_icon.png",
+  displayName: "我的帳號",
   showPornIcon: true,
   content: (
     <>
-      R18噗測試
-      <br />
-      {pictureLink(
-        "https://images.plurk.com/6ZJ1yANzRcR6BN7BKeGXLD.jpg",
-        "https://images.plurk.com/mx_6ZJ1yANzRcR6BN7BKeGXLD.jpg"
-      )}
+      成人話題！噓~~<br />
+      右鍵設置馬賽克！
     </>
   ),
   showEdit: true,
@@ -111,38 +90,35 @@ const r18Post: PostData = {
 
 const normalPost: PostData = {
   pid: "354208900030706",
-  avatarUrl: "https://s.plurk.com/c8980959827c3c923bdd.jpg",
-  displayName: "ptestcss",
+  avatarUrl: "/profile_icon.png",
+  displayName: "我的帳號",
   content: (
     <>
-      正常噗+回覆測試
+      正常噗文 + 回覆
       {metaLink(
-        "https://en.wikipedia.org/wiki/Cat",
-        "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Cat_August_2010-4.jpg/1280px-Cat_August_2010-4.jpg",
-        "Cat - Wikipedia"
-      )}
-      {pictureLink(
-        "https://images.plurk.com/75eO0whFoYXzgAxYgQ6hio.jpg",
-        "https://images.plurk.com/75eO0whFoYXzgAxYgQ6hio.jpg"
+        "https://zh.wikipedia.org/zh-tw/%E5%99%97%E6%B5%AA",
+        "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/dc/Plurk_logo_2018.svg/250px-Plurk_logo_2018.svg.png?utm_source=zh.wikipedia.org&utm_campaign=parser&utm_content=thumbnail",
+        "噗浪 - Wikipedia"
       )}
     </>
   ),
   reactions: [
-    { src: "https://s.plurk.com/emoticons/basic2/38692e95e30abcd59898.gif", count: 1 },
-    { src: "https://s.plurk.com/emoticons/basic2/28a8c933cf014dcd423a.gif", count: 1 },
-    { src: "https://s.plurk.com/emoticons/basic2/3d5dd88acb198686283f.gif", count: 1 },
+    { src: "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3Bpa3pnNWlodmNobWQyb3hnNG83dmlpbmdta3dkMjVnaTUzdWYxOSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/rq2jXlnzIwxseqeG8J/giphy.gif", count: 1 }
   ],
   showEdit: true,
   muteState: "off",
-  likeState: "off",
-  likeCount: 2,
+  likeState: "on",
+  likeCount: 1,
   replurkState: "off",
   showMark: true,
+  markState: "on",
   responseCount: 2,
   showResponseCount: true,
-  timeText: "1 小時",
+  timePrefix: "上次編輯",
+  timeText: new Date().toLocaleDateString(),
   thread: {
     reactionCount: 3,
+    favoriteCount: 1,
     responseLabel: "2 則回應",
     responses: [
       {
@@ -153,7 +129,7 @@ const normalPost: PostData = {
       },
       {
         id: "response-owner",
-        displayName: "ptestcss",
+        displayName: "我的帳號",
         content: "本人回應",
         isOwner: true,
       },
@@ -180,7 +156,8 @@ const postSlots: PostSlot[] = [
     id: "normal",
     data: normalPost,
     // 用途：示範未讀回應數徽章，並保留正常噗與回覆串互動測試。
-    className: "new",
+    // className: "new",為未讀回應數徽章，現在為未讀回應數徽章，所以不需要。
+    className: "",
     position: { left: "750px", top: "5%" },
   },
   {
@@ -249,12 +226,13 @@ const PlurkTimelinePosts = () => {
         {`
         .timeline-cnt .plurk {
           position: absolute;
-          z-index: 5;
           cursor: pointer;
         }
         .plurk {
           color: #111;
           white-space: nowrap;
+          /* 用途：噗文 z-index 放在 .plurk，不要綁 .timeline-cnt，以免整層蓋住吉祥物。 */
+          z-index: 5;
         }
         .timeline-cnt .display {
           width: 380px;
@@ -262,6 +240,9 @@ const PlurkTimelinePosts = () => {
         }
         .timeline-cnt .plurk_box {
           width: 503px;
+        }
+        :where(.timeline-cnt .plurk_box) {
+          /* 用途：:where 降低展開噗預設 z-index 權重，讓使用者 CSS 可覆寫。 */
           z-index: 10;
         }
         `}
@@ -277,7 +258,11 @@ const PlurkTimelinePosts = () => {
           onMouseLeave={handlePostMouseLeave(slot.id)}
           onClick={handlePostClick(slot.id)}
         >
-          <PlurkPost data={slot.data} skipStyles={index > 0} />
+          <PlurkPost
+            data={slot.data}
+            skipStyles={index > 0}
+            slotClassName={slot.className}
+          />
           {activePostId === slot.id && slot.data.thread && (
             <PlurkResponseBox thread={slot.data.thread} />
           )}

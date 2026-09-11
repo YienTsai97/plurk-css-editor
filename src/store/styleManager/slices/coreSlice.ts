@@ -18,10 +18,17 @@ export const createCoreSlice = (set: SliceSet, get: SliceGet): Partial<StyleMana
   setInitialBatch: (selector: string, init: StyleProps) =>
     set((state: StyleManagerState) => {
       const merged = { ...(state.initial[selector] ?? {}), ...init } as StyleProps;
+      // 用途：保留已有 current（draft import／上傳）；只補尚未出現的預設 key。
+      const mergedCurrent = {
+        ...merged,
+        ...(state.current[selector] ?? {}),
+      } as StyleProps;
 
       const nextStyleSources = { ...state.styleSources };
       nextStyleSources[selector] = { ...(nextStyleSources[selector] ?? {}) };
       Object.keys(init).forEach((prop) => {
+        const existing = nextStyleSources[selector][prop];
+        if (existing === "imported" || existing === "manual") return;
         nextStyleSources[selector][prop] = "registered";
       });
 
@@ -30,12 +37,16 @@ export const createCoreSlice = (set: SliceSet, get: SliceGet): Partial<StyleMana
       const m = nextAllStyles.get(selector)!;
       const now = Date.now();
       Object.entries(init).forEach(([prop, value]) => {
+        const existing = m.get(prop);
+        if (existing && (existing.source === "imported" || existing.source === "manual")) {
+          return;
+        }
         m.set(prop, { value, source: "registered", timestamp: now });
       });
 
       return {
         initial: { ...state.initial, [selector]: merged },
-        current: { ...state.current, [selector]: merged },
+        current: { ...state.current, [selector]: mergedCurrent },
         styleSources: nextStyleSources,
         allStyles: nextAllStyles,
       };

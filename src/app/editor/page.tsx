@@ -1,22 +1,25 @@
 "use client";
 
-import { SaveProjectButton } from "@/components/editor/save-project-button";
-import { CssImport } from "@/components/preview/common/css-import";
-import { ExportButton } from "@/components/preview/common/export-button";
+import { EditorIoDock } from "@/components/editor/editor-io-dock";
+import { DashboardFriendsFansStyles } from "@/components/preview/plurk-dashboard/dashboard-friends-fans/dashboard-friends-fans-styles";
+import { DashboardKarmaStyles } from "@/components/preview/plurk-dashboard/dashboard-karma/dashboard-karma-styles";
+import { DashboardSegmentStyles } from "@/components/preview/plurk-dashboard/dashboard-segment/dashboard-segment-styles";
+import { DashboardShellStyles } from "@/components/preview/plurk-dashboard/dashboard-shell/dashboard-shell-styles";
 import { PlurkDashboard } from "@/components/preview/plurk-dashboard/plurk-dashboard";
 import { PlurkFooter } from "@/components/preview/plurk-footer";
 import { PlurkTimeline } from "@/components/preview/plurk-timeline/plurk-timeline";
 import { PlurkTimelineControl } from "@/components/preview/plurk-timeline/plurk-timeline-control";
+import { MutedOpacityStyles } from "@/components/preview/plurk-post/plurk-post-muted/muted-opacity-styles";
+import { R18BlurStyles } from "@/components/preview/plurk-post/plurk-post-r18/r18-blur-styles";
+import { WhisperQualifierStyles } from "@/components/preview/plurk-post/plurk-post-whisper/whisper-qualifier-styles";
 import { ResponseCountStyles } from "@/components/preview/plurk-timeline/response-count/response-count-styles";
 import { TimelineBackground } from "@/components/preview/plurk-timeline/timeline-background/timeline-background";
 import { PlurkTopBar } from "@/components/preview/plurk-top-bar";
 import { useCSSImporter } from "@/store/styleManager/styleManager";
-import { CssValue } from "@/types/css.type";
+import { analyzeImportedCss } from "@/utils/parseCssImport";
 import { useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
-
-type ParsedCssRule = { selector: string; properties: Record<string, CssValue> };
+import { Suspense, useEffect, useRef, useState } from "react";
 
 const EditorPageContent = () => {
   const searchParams = useSearchParams();
@@ -24,9 +27,9 @@ const EditorPageContent = () => {
   const isLoggingIn = status === "authenticated";
   const { importCSS, getAllStyles } = useCSSImporter();
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isActionDockOpen, setIsActionDockOpen] = useState(false);
+  const skipDraftSaveRef = useRef(false);
 
-  // 處理 URL 匯入
+  // 用途：?import= 與 localStorage 草稿都走同一套 parser，避免 url(https://...) 被截斷。
   useEffect(() => {
     const importParam = searchParams.get("import");
     if (importParam) {
@@ -38,7 +41,7 @@ const EditorPageContent = () => {
         } else {
           // 如果是 CSS 內容，直接匯入
           const decodedCSS = decodeURIComponent(importParam);
-          const cssRules = parseCSS(decodedCSS);
+          const cssRules = analyzeImportedCss(decodedCSS).rules;
           importCSS(cssRules);
           console.log("CSS import from URL:", cssRules.length, "rules");
         }
@@ -52,54 +55,12 @@ const EditorPageContent = () => {
     setIsLoaded(true);
   }, [searchParams, importCSS]);
 
-  // 解析 CSS 字串
-  const parseCSS = (cssString: string): ParsedCssRule[] => {
-    const rules: ParsedCssRule[] = [];
-
-    // 移除註解
-    const cleanCSS = cssString.replace(/\/\*[\s\S]*?\*\//g, "");
-
-    const cssRules = cleanCSS.match(/[^}]+}/g) || [];
-
-    cssRules.forEach((rule) => {
-      const selectorMatch = rule.match(/^([^{]+)/);
-      const propertiesMatch = rule.match(/\{([^}]+)\}/);
-
-      if (selectorMatch && propertiesMatch) {
-        const selector = selectorMatch[1].trim();
-        const propertiesText = propertiesMatch[1];
-
-        const properties: Record<string, CssValue> = {};
-        const propertyPairs = propertiesText
-          .split(";")
-          .filter((pair) => pair.trim());
-
-        propertyPairs.forEach((pair) => {
-          const [prop, value] = pair.split(":").map((s) => s.trim());
-          if (prop && value) {
-            const styleKey = prop.replace(/-([a-z])/g, (g) =>
-              g[1].toUpperCase(),
-            );
-            properties[styleKey] = value;
-          }
-        });
-
-        if (Object.keys(properties).length > 0) {
-          rules.push({ selector, properties });
-        }
-      }
-    });
-
-    return rules;
-  };
-
-  // 載入 localStorage 草稿
   const loadDraft = () => {
     try {
       const savedDraft = localStorage.getItem("plurk-css-editor-draft");
       if (savedDraft) {
         const { css } = JSON.parse(savedDraft);
-        const cssRules = parseCSS(css);
+        const cssRules = analyzeImportedCss(css).rules;
         importCSS(cssRules);
         console.log(
           "Loaded draft from localStorage:",
@@ -119,6 +80,22 @@ const EditorPageContent = () => {
     const saveDraft = () => {
       try {
         const { css } = getAllStyles();
+        const hasStyles = Boolean(css.trim());
+
+        // 回復模板後略過一次寫回；若使用者立刻再匯入，hasStyles 為真則照常存草稿。
+        if (skipDraftSaveRef.current) {
+          skipDraftSaveRef.current = false;
+          if (!hasStyles) {
+            localStorage.removeItem("plurk-css-editor-draft");
+            return;
+          }
+        }
+
+        if (!hasStyles) {
+          localStorage.removeItem("plurk-css-editor-draft");
+          return;
+        }
+
         const draft = {
           css,
           timestamp: Date.now(),
@@ -129,10 +106,8 @@ const EditorPageContent = () => {
       }
     };
 
-    // 每 30 秒自動儲存
     const interval = setInterval(saveDraft, 30000);
 
-    // 頁面卸載時儲存
     const handleBeforeUnload = () => {
       saveDraft();
     };
@@ -142,7 +117,7 @@ const EditorPageContent = () => {
     return () => {
       clearInterval(interval);
       window.removeEventListener("beforeunload", handleBeforeUnload);
-      saveDraft(); // 最後一次儲存
+      saveDraft();
     };
   }, [isLoaded, getAllStyles]);
 
@@ -150,67 +125,36 @@ const EditorPageContent = () => {
     <>
       {/* 用途：常駐掛載 response_count 的 store 註冊與高權重預覽 CSS，不能依賴右鍵選單是否開啟。 */}
       <ResponseCountStyles />
+      {/* 用途：R18／消音／偷偷說樣式常駐註冊與預覽，與右鍵選單開關無關。 */}
+      <R18BlurStyles />
+      <MutedOpacityStyles />
+      <WhisperQualifierStyles />
+      {/* 用途：主控台外殼／各區塊／好友粉絲／Karma 樣式常駐註冊與預覽。 */}
+      <DashboardShellStyles />
+      <DashboardSegmentStyles />
+      <DashboardFriendsFansStyles />
+      <DashboardKarmaStyles />
 
       <div id="layout_body">
+        <div id="background_layout"></div>
         <PlurkTopBar />
         <div id="layout_content_html" className="_lch_">
           <div id="layout_content" className="_lc_ clearfix">
             <TimelineBackground isLoggingIn={isLoggingIn}>
-              <PlurkTimeline />
+              <PlurkTimeline isLoggingIn={isLoggingIn} />
               <PlurkTimelineControl />
             </TimelineBackground>
             <PlurkDashboard />
             <PlurkFooter />
-            {/* toggle button group */}
-            <div
-              style={{
-                position: "fixed",
-                right: "16px",
-                bottom: "16px",
-                zIndex: 1000,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "flex-end",
-                gap: "10px",
+            <EditorIoDock
+              // 用途：回復模板後略過一次草稿寫回，避免剛清空又被 autosave 存回去。
+              onSkipDraftSave={() => {
+                skipDraftSaveRef.current = true;
               }}
-              onMouseEnter={() => setIsActionDockOpen(true)}
-              onMouseLeave={() => setIsActionDockOpen(false)}
-            >
-              <button
-                onClick={() => setIsActionDockOpen((prev) => !prev)}
-                title="功能選單"
-                style={{
-                  width: "40px",
-                  height: "40px",
-                  borderRadius: "999px",
-                  border: "none",
-                  backgroundColor: "#FF574D",
-                  color: "#fff",
-                  cursor: "pointer",
-                  fontSize: "18px",
-                  boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
-                }}
-              >
-                ...
-              </button>
-
-              {isActionDockOpen && (
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "8px",
-                  }}
-                >
-                  <ExportButton layout="inline" />
-                  <CssImport layout="inline" />
-                  <SaveProjectButton layout="inline" />
-                </div>
-              )}
-            </div>
+            />
           </div>
-        </div >
-      </div >
+        </div>
+      </div>
     </>
   );
 };

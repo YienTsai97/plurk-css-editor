@@ -1,8 +1,8 @@
-import type { CSSRule, SliceGet, SliceSet, StyleEntry, StyleManagerState } from "../types";
+import type { CssValue } from "@/types/css.type";
+import type { CSSRule, SliceGet, SliceSet, StyleDict, StyleEntry, StyleManagerState, StyleSource } from "../types";
 import { buildCssText } from "../utils/cssText";
 import { cssValueToString } from "../utils/cssValue";
 import { makeCssVarName } from "../utils/cssVar";
-import type { CssValue } from "@/types/css.type";
 
 const IMPORTED_STYLE_TAG_ID = "imported-css-styles";
 
@@ -23,6 +23,13 @@ function injectImportedStyleTag(cssText: string) {
   document.head.appendChild(styleEl);
 }
 
+function removeImportedCssVars(keys: Array<{ selector: string; prop: string }>) {
+  if (typeof document === "undefined") return;
+  keys.forEach(({ selector, prop }) => {
+    document.documentElement.style.removeProperty(makeCssVarName(selector, prop));
+  });
+}
+
 /**
  * Remove imported entries from allStyles/styleSources
  * 回傳：哪些 selector/prop 被視為 imported（用來同步 current）
@@ -33,7 +40,6 @@ function stripImportedTracking(state: StyleManagerState) {
 
   const importedKeys: Array<{ selector: string; prop: string }> = [];
 
-  // allStyles: remove imported entries
   nextAllStyles.forEach((propsMap, selector) => {
     const nextProps = new Map<string, StyleEntry>();
     propsMap.forEach((entry, prop) => {
@@ -48,7 +54,6 @@ function stripImportedTracking(state: StyleManagerState) {
     else nextAllStyles.delete(selector);
   });
 
-  // styleSources: remove imported marks
   Object.keys(nextStyleSources).forEach((selector) => {
     const srcForSel = nextStyleSources[selector];
     Object.keys(srcForSel).forEach((prop) => {
@@ -60,16 +65,37 @@ function stripImportedTracking(state: StyleManagerState) {
   return { nextAllStyles, nextStyleSources, importedKeys };
 }
 
-export const createImportSlice = (set: SliceSet, _get: SliceGet): Partial<StyleManagerState> => {
-  void _get;
+function restoreCurrentAfterImportedStrip(
+  state: StyleManagerState,
+  importedKeys: Array<{ selector: string; prop: string }>,
+) {
+  const nextCurrent: StyleManagerState["current"] = { ...state.current };
+
+  importedKeys.forEach(({ selector, prop }) => {
+    const curSel = nextCurrent[selector];
+    if (!curSel) return;
+
+    const initialVal = (state.initial[selector] as Record<string, CssValue> | undefined)?.[prop];
+
+    if (initialVal !== undefined) {
+      nextCurrent[selector] = { ...curSel, [prop]: initialVal };
+    } else {
+      const nextSel = { ...curSel } as Record<string, CssValue>;
+      delete nextSel[prop];
+      nextCurrent[selector] = nextSel;
+    }
+  });
+
+  return nextCurrent;
+}
+
+export const createImportSlice = (set: SliceSet, get: SliceGet): Partial<StyleManagerState> => {
   return {
     importCSS: (cssRules: CSSRule[]) =>
     set((state: StyleManagerState) => {
-      // 1) DOM injection
       const cssText = buildCssText(cssRules);
       injectImportedStyleTag(cssText);
 
-      // 2) state updates
       const nextCurrent: StyleManagerState["current"] = { ...state.current };
       const nextAllStyles = new Map(state.allStyles);
       const nextStyleSources: StyleManagerState["styleSources"] = { ...state.styleSources };
@@ -84,8 +110,6 @@ export const createImportSlice = (set: SliceSet, _get: SliceGet): Partial<StyleM
         const selectorMap = nextAllStyles.get(selector)!;
 
         Object.entries(properties).forEach(([prop, value]) => {
-          // NOTE: properties is Record<string, CssValue>, prop may not be StyleKey strictly
-          // 你若想更嚴格：可以改 CSSRule 的 properties key 為 Partial<Record<StyleKey, CssValue>>
           nextCurrent[selector] = {
             ...nextCurrent[selector],
             [prop]: value,
@@ -99,7 +123,6 @@ export const createImportSlice = (set: SliceSet, _get: SliceGet): Partial<StyleM
             timestamp: now,
           });
 
-          // optional: also set css var for fast override
           const varName = makeCssVarName(selector, prop);
           if (typeof document !== "undefined") {
             document.documentElement.style.setProperty(varName, cssValueToString(value));
@@ -120,76 +143,70 @@ export const createImportSlice = (set: SliceSet, _get: SliceGet): Partial<StyleM
       if (typeof document !== "undefined") {
         document.documentElement.style.setProperty(varName, cssValueToString(value));
       }
-      return state; // no state change
+      return state;
     }),
 
   /**
-   * Clear imported:
+   * Clear imported only:
    * - remove <style id="imported-css-styles">
    * - remove imported tracking (allStyles/styleSources)
-   * - remove imported props from current (delete only)
+   * - restore current to initial for imported props
+   * - remove related CSS variables
+   * - do not touch manual / registered
    */
   clearImportedCSS: () =>
     set((state: StyleManagerState) => {
-      removeImportedStyleTag();
-
       const { nextAllStyles, nextStyleSources, importedKeys } = stripImportedTracking(state);
-
-      // sync current: delete imported props (do not force revert to initial)
-      const nextCurrent: StyleManagerState["current"] = { ...state.current };
-
-      importedKeys.forEach(({ selector, prop }) => {
-        const curSel = nextCurrent[selector];
-        if (!curSel) return;
-
-        const nextSel = { ...curSel } as Record<string, CssValue>;
-        delete nextSel[prop];
-        nextCurrent[selector] = nextSel;
-      });
+      removeImportedStyleTag();
+      removeImportedCssVars(importedKeys);
 
       return {
-        current: nextCurrent,
+        current: restoreCurrentAfterImportedStrip(state, importedKeys),
         allStyles: nextAllStyles,
         styleSources: nextStyleSources,
       };
     }),
 
-  /**
-   * Clear imported + restore initial:
-   * - remove style tag
-   * - remove imported tracking
-   * - for each imported prop:
-   *   - if initial has that prop -> set current to initial value
-   *   - else -> delete from current
-   */
-  resetImportedToInitial: () =>
+  resetImportedToInitial: () => {
+    get().clearImportedCSS();
+  },
+
+  /** 用途：先清掉上一輪 imported，再套用這次匯入，避免舊規則殘留。 */
+  replaceImportedCSS: (cssRules: CSSRule[]) => {
+    get().clearImportedCSS();
+    if (cssRules.length > 0) {
+      get().importCSS(cssRules);
+    }
+  },
+
+  resetAllToInitial: () =>
     set((state: StyleManagerState) => {
+      const importedKeys = stripImportedTracking(state).importedKeys;
       removeImportedStyleTag();
+      removeImportedCssVars(importedKeys);
 
-      const { nextAllStyles, nextStyleSources, importedKeys } = stripImportedTracking(state);
-
-      const nextCurrent: StyleManagerState["current"] = { ...state.current };
-
-      importedKeys.forEach(({ selector, prop }) => {
-        const curSel = nextCurrent[selector];
-        if (!curSel) return;
-
-        const initialVal = (state.initial[selector] as Record<string, CssValue> | undefined)?.[prop];
-
-        if (initialVal !== undefined) {
-          nextCurrent[selector] = { ...curSel, [prop]: initialVal };
-        } else {
-          const nextSel = { ...curSel } as Record<string, CssValue>;
-          delete nextSel[prop];
-          nextCurrent[selector] = nextSel;
-        }
+      const current: StyleDict = {};
+      Object.keys(state.initial).forEach((selector) => {
+        current[selector] = { ...state.initial[selector] };
       });
 
-      return {
-        current: nextCurrent,
-        allStyles: nextAllStyles,
-        styleSources: nextStyleSources,
-      };
+      const allStyles = new Map<string, Map<string, StyleEntry>>();
+      const styleSources: Record<string, Record<string, StyleSource>> = {};
+      const now = Date.now();
+
+      Object.entries(state.initial).forEach(([selector, props]) => {
+        const nextProps = new Map<string, StyleEntry>();
+        const sources: Record<string, StyleSource> = {};
+        Object.entries(props).forEach(([prop, value]) => {
+          if (value === undefined) return;
+          nextProps.set(prop, { value, source: "registered", timestamp: now });
+          sources[prop] = "registered";
+        });
+        allStyles.set(selector, nextProps);
+        styleSources[selector] = sources;
+      });
+
+      return { current, allStyles, styleSources };
     }),
   };
 };

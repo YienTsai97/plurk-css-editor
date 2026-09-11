@@ -10,6 +10,9 @@ import {
 import { cn } from "@/lib/utils";
 import type { ComponentProps, CSSProperties, ReactNode } from "react";
 
+/** 用途：右鍵選單主層／子層共用的直向間距（對齊貼文選單規格）。 */
+const EDITOR_MENU_STACK_GAP = 0.5;
+
 /** 用途：統一所有編輯器 context menu / submenu 的外框視覺，避免各入口自行定義造成漂移。 */
 const menuSurfaceStyle: CSSProperties = {
   zIndex: 1300,
@@ -22,7 +25,14 @@ const menuSurfaceStyle: CSSProperties = {
   boxShadow: "0 4px 10px rgba(0,0,0,0.12)",
 };
 
-/** 用途：統一可點擊 menu item 的基本尺寸、邊框與文字樣式。 */
+/** 用途：主層與子層共用的直向堆疊（flex + gap），作為右鍵選單統一間距規格。 */
+const menuStackStyle: CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: EDITOR_MENU_STACK_GAP,
+};
+
+/** 用途：統一可點擊 menu item 的基本尺寸與文字樣式（無邊框，靠 hover 灰底辨識）。 */
 const menuItemStyle: CSSProperties = {
   padding: "8px 12px",
   fontSize: 13,
@@ -31,7 +41,7 @@ const menuItemStyle: CSSProperties = {
   outline: "none",
   backgroundColor: "#ffffff",
   color: "#374151",
-  border: "1px solid #e5e7eb",
+  border: "none",
 };
 
 /** 用途：讓 submenu 觸發列沿用一般 item 外觀，並保留左右對齊與箭頭空間。 */
@@ -51,32 +61,43 @@ const EditorMenuInteractionStyles = () => (
   <style>
     {`
       .${editorMenuTriggerClassName} {
-        transition: background-color 120ms ease, color 120ms ease;
+        transition: background-color 120ms ease, color 120ms ease, opacity 120ms ease;
       }
 
-      .${editorMenuTriggerClassName}:hover,
-      .${editorMenuTriggerClassName}:focus-visible,
-      .${editorMenuTriggerClassName}[data-state="open"] {
+      .${editorMenuTriggerClassName}:hover:not([data-disabled]):not(:disabled),
+      .${editorMenuTriggerClassName}:focus-visible:not([data-disabled]):not(:disabled),
+      .${editorMenuTriggerClassName}[data-state="open"]:not([data-disabled]):not(:disabled) {
         background-color: #f3f4f6 !important;
+      }
+
+      /* 用途：對齊儲存專案按鈕 disabled 的淡化（opacity 0.45），讓使用者知道尚不可點。 */
+      .${editorMenuTriggerClassName}[data-disabled],
+      .${editorMenuTriggerClassName}:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
       }
     `}
   </style>
 );
 
-/** 用途：主層 context menu 外殼，負責統一 surface 樣式與互動 CSS。 */
+/** 用途：主層 context menu 外殼，負責統一 surface、直向 gap 與互動 CSS。 */
 export const EditorMenuContent = ({
   children,
   style,
   className,
   ...props
 }: ComponentProps<typeof ContextMenuContent>) => (
-  <ContextMenuContent style={{ ...menuSurfaceStyle, ...style }} className={className} {...props}>
+  <ContextMenuContent
+    style={{ ...menuSurfaceStyle, ...menuStackStyle, ...style }}
+    className={className}
+    {...props}
+  >
     <EditorMenuInteractionStyles />
     {children}
   </ContextMenuContent>
 );
 
-/** 用途：子層 context menu 外殼，維持與主層相同 surface，並預設為直向表單排列。 */
+/** 用途：子層 context menu 外殼，維持與主層相同 surface 與直向 gap。 */
 export const EditorMenuSubContent = ({
   children,
   style,
@@ -87,7 +108,7 @@ export const EditorMenuSubContent = ({
   <ContextMenuPortal>
     <ContextMenuSubContent
       sideOffset={sideOffset}
-      style={{ ...menuSurfaceStyle, display: "flex", flexDirection: "column", gap: 12, ...style }}
+      style={{ ...menuSurfaceStyle, ...menuStackStyle, ...style }}
       className={className}
       {...props}
     >
@@ -137,12 +158,31 @@ export const EditorMenuTitle = ({ children }: { children: ReactNode }) => (
   </div>
 );
 
-/** 用途：標示同一 menu 內的功能群組，例如「貼文外觀」「其他區塊」。 */
+/**
+ * 用途：設定欄位標籤（大小、位置、圓角等）共用樣式。
+ * 預設含 padding-bottom，讓標籤與控制項之間有固定呼吸空間。
+ */
+export const editorMenuFieldLabelStyle: CSSProperties = {
+  fontSize: 12,
+  color: "#374151",
+  paddingBottom: 8,
+};
+
+/** 用途：設定欄位標籤 span，裝飾圖設定／回應數徽章等子選單共用。 */
+export const EditorMenuFieldLabel = ({
+  children,
+  style,
+}: {
+  children: ReactNode;
+  style?: CSSProperties;
+}) => <span style={{ ...editorMenuFieldLabelStyle, ...style }}>{children}</span>;
+
+/** 用途：標示同一 menu 內的功能群組，例如「共通」「已讀」「未讀」。 */
 export const EditorMenuSectionLabel = ({ children }: { children: ReactNode }) => (
   <span
     style={{
-      padding: "4px 4px 0",
-      fontSize: 12,
+      ...editorMenuFieldLabelStyle,
+      padding: "4px 4px 8px",
       fontWeight: 600,
       color: "#6b7280",
     }}
@@ -173,18 +213,17 @@ export const EditorMenuRow = ({
   </div>
 );
 
-/** 用途：整排可點 trigger 的基底 style，交給 ColorPicker / BorderEditor 等控制器套用。 */
+/**
+ * 用途：整排可點 trigger 的基底 style，交給 ColorPicker / BorderEditor 等控制器套用。
+ * 規格對齊 EditorMenuItem / EditorMenuSubTrigger（同 padding、字級、無邊框）。
+ */
 export const editorMenuTriggerStyle: CSSProperties = {
+  ...menuItemStyle,
   width: "100%",
-  minHeight: 24,
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  gap: 12,
-  padding: "0 4px",
-  border: "none",
-  borderRadius: 6,
-  background: "transparent",
+  gap: 8,
   cursor: "pointer",
   font: "inherit",
   textAlign: "left",
@@ -200,7 +239,7 @@ export const EditorMenuTriggerRow = ({
   actionLabel: ReactNode;
 }) => (
   <>
-    <span style={{ fontSize: 12, color: "#374151" }}>{label}</span>
-    <span style={{ fontSize: 12, color: "#666" }}>{actionLabel}</span>
+    <span style={{ fontSize: 13, color: "#374151" }}>{label}</span>
+    <span style={{ fontSize: 13, color: "#666" }}>{actionLabel}</span>
   </>
 );

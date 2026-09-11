@@ -26,7 +26,7 @@ const ColorPicker = ({
   onChange,
   defaultValue = "rgba(255, 255, 255, 1)",
   showReset = false,
-  trigger = "Select Color",
+  trigger = "選擇顏色",
   triggerStyle,
   triggerClassName,
 }: Prop) => {

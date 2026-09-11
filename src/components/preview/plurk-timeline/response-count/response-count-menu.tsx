@@ -3,20 +3,20 @@
 import ColorPicker from "@/components/controllers/color-picker";
 import { NumberSliderControl } from "@/components/controllers/number-slider-control";
 import {
-  editorMenuTriggerClassName,
-  editorMenuTriggerStyle,
   EditorMenuSectionLabel,
   EditorMenuSubContent,
   EditorMenuSubTrigger,
+  editorMenuTriggerClassName,
   EditorMenuTriggerRow,
+  editorMenuTriggerStyle,
 } from "@/components/editor/editor-context-menu";
+import { ContextMenuSub } from "@/components/ui/context-menu";
 import {
   RESPONSE_COUNT_NEW_STYLE_DEFAULTS,
   RESPONSE_COUNT_STYLE_DEFAULTS,
 } from "@/store/styleManager/defaults";
 import { useStyleProp } from "@/store/styleManager/styleManager";
 import { cssValueToString } from "@/store/styleManager/utils/cssValue";
-import { ContextMenuSub } from "@/components/ui/context-menu";
 import {
   RESPONSE_COUNT_NEW_SELECTOR,
   RESPONSE_COUNT_SELECTOR,
@@ -54,7 +54,6 @@ export const ResponseCountMenu = () => {
           step={1}
           unit="%"
           onChange={(value) => borderRadius.set(`${value}%`)}
-          style={{ padding: "0 4px" }}
         />
 
         {/* 用途：一般/已讀回應數徽章的顏色設定。 */}
@@ -64,7 +63,7 @@ export const ResponseCountMenu = () => {
           onChange={(v) => bgColor.set(v)}
           defaultValue={RESPONSE_COUNT_STYLE_DEFAULTS.backgroundColor}
           showReset
-          trigger={<EditorMenuTriggerRow label="背景色" actionLabel="Select Color" />}
+          trigger={<EditorMenuTriggerRow label="背景色" actionLabel="" />}
           triggerClassName={editorMenuTriggerClassName}
           triggerStyle={editorMenuTriggerStyle}
         />
@@ -73,7 +72,7 @@ export const ResponseCountMenu = () => {
           onChange={(v) => color.set(v)}
           defaultValue={RESPONSE_COUNT_STYLE_DEFAULTS.color}
           showReset
-          trigger={<EditorMenuTriggerRow label="文字色" actionLabel="Select Color" />}
+          trigger={<EditorMenuTriggerRow label="文字色" actionLabel="" />}
           triggerClassName={editorMenuTriggerClassName}
           triggerStyle={editorMenuTriggerStyle}
         />
@@ -85,7 +84,7 @@ export const ResponseCountMenu = () => {
           onChange={(v) => newBgColor.set(v)}
           defaultValue={RESPONSE_COUNT_NEW_STYLE_DEFAULTS.backgroundColor}
           showReset
-          trigger={<EditorMenuTriggerRow label="背景色" actionLabel="Select Color" />}
+          trigger={<EditorMenuTriggerRow label="背景色" actionLabel="" />}
           triggerClassName={editorMenuTriggerClassName}
           triggerStyle={editorMenuTriggerStyle}
         />
@@ -94,7 +93,7 @@ export const ResponseCountMenu = () => {
           onChange={(v) => newColor.set(v)}
           defaultValue={RESPONSE_COUNT_NEW_STYLE_DEFAULTS.color}
           showReset
-          trigger={<EditorMenuTriggerRow label="文字色" actionLabel="Select Color" />}
+          trigger={<EditorMenuTriggerRow label="文字色" actionLabel="" />}
           triggerClassName={editorMenuTriggerClassName}
           triggerStyle={editorMenuTriggerStyle}
         />
