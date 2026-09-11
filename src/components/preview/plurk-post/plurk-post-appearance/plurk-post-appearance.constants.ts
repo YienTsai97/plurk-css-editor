@@ -5,6 +5,7 @@
  * - backgroundColor
  * - backgroundImage
  * - border
+ * - borderRadius
  */
 export const PLURK_POST_SELECTOR = ".plurk_cnt";
 

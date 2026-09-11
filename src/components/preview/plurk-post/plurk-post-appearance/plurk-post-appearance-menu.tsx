@@ -5,7 +5,7 @@ import ColorPicker from "@/components/controllers/color-picker";
 import {
   editorMenuTriggerClassName,
   EditorMenuTriggerRow,
-  editorMenuTriggerStyle
+  editorMenuTriggerStyle,
 } from "@/components/editor/editor-context-menu";
 import { PLURK_POST_STYLE_DEFAULTS } from "@/store/styleManager/defaults";
 import { useStyleProp } from "@/store/styleManager/styleManager";
@@ -16,6 +16,7 @@ import { PLURK_POST_SELECTOR } from "./plurk-post-appearance.constants";
 export const PlurkPostAppearanceMenu = () => {
   const bgColor = useStyleProp(PLURK_POST_SELECTOR, "backgroundColor");
   const border = useStyleProp(PLURK_POST_SELECTOR, "border");
+  const borderRadius = useStyleProp(PLURK_POST_SELECTOR, "borderRadius");
   const bgColorValue =
     cssValueToString(bgColor.value) || PLURK_POST_STYLE_DEFAULTS.backgroundColor;
   const bgColorDefaultValue =
@@ -37,6 +38,8 @@ export const PlurkPostAppearanceMenu = () => {
       <BorderEditor
         borderValue={border.value}
         setChange={border.set}
+        borderRadiusValue={borderRadius.value ?? PLURK_POST_STYLE_DEFAULTS.borderRadius}
+        setBorderRadius={borderRadius.set}
         trigger={<EditorMenuTriggerRow label="邊框" actionLabel="" />}
         triggerClassName={editorMenuTriggerClassName}
         triggerStyle={editorMenuTriggerStyle}

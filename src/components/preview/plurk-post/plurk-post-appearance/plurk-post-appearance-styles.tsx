@@ -27,6 +27,7 @@ export const PlurkPostAppearanceStyles = () => {
   const bgColor = useStyleProp(PLURK_POST_SELECTOR, "backgroundColor");
   const bgImage = useStyleProp(PLURK_POST_SELECTOR, "backgroundImage");
   const border = useStyleProp(PLURK_POST_SELECTOR, "border");
+  const borderRadius = useStyleProp(PLURK_POST_SELECTOR, "borderRadius");
 
   /** 用途：保留舊流程對 `.name` 匯入/手動 color 的高權重預覽能力。 */
   const nameColor = useStyleProp(PLURK_POST_NAME_SELECTOR, "color");
@@ -34,6 +35,7 @@ export const PlurkPostAppearanceStyles = () => {
   const bgColorChanged = bgColor.value !== bgColor.initial;
   const bgImageChanged = bgImage.value !== bgImage.initial;
   const borderChanged = border.value !== border.initial;
+  const borderRadiusChanged = borderRadius.value !== borderRadius.initial;
   const nameColorChanged = nameColor.value !== nameColor.initial;
 
   const css = [
@@ -43,6 +45,8 @@ export const PlurkPostAppearanceStyles = () => {
       `body#pcg .plurk_cnt.plurk_cnt.plurk_cnt { background-image: ${cssValueToString(bgImage.value)}; }`,
     borderChanged &&
       `body#pcg .plurk_cnt.plurk_cnt.plurk_cnt { border: ${cssValueToString(border.value)}; }`,
+    borderRadiusChanged &&
+      `body#pcg .plurk_cnt.plurk_cnt.plurk_cnt { border-radius: ${cssValueToString(borderRadius.value)}; }`,
     nameColorChanged &&
       `body#pcg .name.name.name { color: ${cssValueToString(nameColor.value)}; }`,
   ]

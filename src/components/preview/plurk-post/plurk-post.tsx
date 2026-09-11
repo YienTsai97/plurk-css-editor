@@ -1,4 +1,3 @@
-import type { CSSProperties } from "react";
 import { EditorMenuContent } from "@/components/editor/editor-context-menu";
 import {
   IconAddReaction,
@@ -13,6 +12,7 @@ import {
   ContextMenuTrigger
 } from "@/components/ui/context-menu";
 import Image from "next/image";
+import type { CSSProperties } from "react";
 import { PlurkManagerLikeIcon } from "./manager/like-icon";
 import { PlurkManagerMuteIcon } from "./manager/mute-icon";
 import PlurkManagerReplurkIcon from "./manager/replurk-icon";
@@ -22,6 +22,7 @@ import {
 } from "./manager/use-manager-icon-toggle";
 import { PlurkPostAppearanceStyles } from "./plurk-post-appearance/plurk-post-appearance-styles";
 import { PlurkPostContextMenuContent } from "./plurk-post-context-menu-content";
+import { getPostTypeMenuFlags } from "./plurk-post-type-menu-flags";
 import { PlurkPostStyles } from "./plurk-post.styles";
 import type { PlurkPostProps } from "./plurk-post.types";
 export type { ManagerIconState } from "./manager/icon-state.type";
@@ -34,10 +35,14 @@ export type {
   PostThread
 } from "./plurk-post.types";
 
-const PlurkPost = ({ data, skipStyles = false }: PlurkPostProps) => {
+const PlurkPost = ({ data, skipStyles = false, slotClassName }: PlurkPostProps) => {
   const mute = useManagerIconToggle(data.pid, data.muteState)
   const like = useManagerIconToggleWithCount(data.pid, data.likeState, data.likeCount)
   const replurk = useManagerIconToggleWithCount(data.pid, data.replurkState, data.replurkCount)
+  const typeMenus = getPostTypeMenuFlags(data, {
+    isMuted: mute.isOn,
+    slotClassName,
+  })
 
   return (
     <>
@@ -188,7 +193,7 @@ const PlurkPost = ({ data, skipStyles = false }: PlurkPostProps) => {
 
           {/* 用途：貼文右鍵選單外殼；內容拆到 PlurkPostContextMenuContent，避免預覽 markup 混入控制器 UI。 */}
           <EditorMenuContent>
-            <PlurkPostContextMenuContent />
+            <PlurkPostContextMenuContent typeMenus={typeMenus} />
           </EditorMenuContent>
         </ContextMenu>
       </div>

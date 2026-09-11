@@ -40,5 +40,8 @@ export type StyleKey =
   | "fontWeight"
   | "zIndex"
   | "opacity"
-  | "flex";
+  | "filter"
+  | "flex"
+  | "transition"
+  | "overflow";
 // ...add more

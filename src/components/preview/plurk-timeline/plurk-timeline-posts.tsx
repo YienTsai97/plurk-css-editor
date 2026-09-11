@@ -11,13 +11,6 @@ const hashtag = (label: string, href: string) => (
   </span>
 )
 
-const pictureLink = (href: string, src: string) => (
-  <a href={href} className="ex_link pictureservices" rel="nofollow">
-    {/* eslint-disable-next-line @next/next/no-img-element */}
-    <img src={src} alt="" height={48} />
-  </a>
-)
-
 const metaLink = (href: string, imageSrc: string, label: string) => (
   <a href={href} className="ex_link meta" rel="nofollow" target="_blank">
     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -265,7 +258,11 @@ const PlurkTimelinePosts = () => {
           onMouseLeave={handlePostMouseLeave(slot.id)}
           onClick={handlePostClick(slot.id)}
         >
-          <PlurkPost data={slot.data} skipStyles={index > 0} />
+          <PlurkPost
+            data={slot.data}
+            skipStyles={index > 0}
+            slotClassName={slot.className}
+          />
           {activePostId === slot.id && slot.data.thread && (
             <PlurkResponseBox thread={slot.data.thread} />
           )}

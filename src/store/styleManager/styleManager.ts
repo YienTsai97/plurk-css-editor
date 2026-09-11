@@ -1,4 +1,16 @@
 "use client";
+import {
+  DASHBOARD_SHELL_HOVER_SELECTOR,
+  DASHBOARD_SHELL_SELECTOR,
+} from "@/components/preview/plurk-dashboard/dashboard-shell/dashboard-shell.constants";
+import { ensureDashboardShellTransitionExport } from "@/components/preview/plurk-dashboard/dashboard-shell/dashboard-shell.utils";
+import {
+  DYNAMIC_LOGO_IMG_SELECTOR,
+  DYNAMIC_LOGO_SELECTOR,
+} from "@/components/preview/plurk-timeline/dynamic-logo/dynamic-logo.constants";
+import { formatDynamicLogoExportBlock } from "@/components/preview/plurk-timeline/dynamic-logo/dynamic-logo.utils";
+import { TIMELINE_BACKGROUND_SELECTOR } from "@/components/preview/plurk-timeline/timeline-background/timeline-background.constants";
+import { formatTimelineBackgroundExportBlock } from "@/components/preview/plurk-timeline/timeline-background/timeline-background.utils";
 import { CssValue, StyleKey } from "@/types/css.type";
 import { shallow } from "zustand/shallow";
 import { createWithEqualityFn } from "zustand/traditional";
@@ -18,6 +30,37 @@ type StyleEntry = {
 const RESPONSE_COUNT_EXPORT_SELECTOR = ".timeline-cnt .response_count";
 const RESPONSE_COUNT_NEW_EXPORT_SELECTOR = ".timeline-cnt .new .response_count";
 const IMPORTED_STYLE_TAG_ID = "imported-css-styles";
+
+/** 用途：對齊 `#dynamic_logo>img` → store key；並拆 `background` 縮寫。 */
+const normalizeImportedLogoRule = (rule: {
+  selector: string;
+  properties: Record<string, CssValue>;
+}) => {
+  const selector = rule.selector
+    .replace(/#dynamic_logo\s*>\s*img/gi, "#dynamic_logo > img")
+    .trim();
+  const properties = { ...rule.properties };
+  const rawBg = properties.background;
+  if (rawBg !== undefined) {
+    delete properties.background;
+    const text = String(rawBg).trim();
+    if (!text || text === "none") {
+      if (properties.backgroundImage === undefined) properties.backgroundImage = "none";
+    } else {
+      const urlMatch = text.match(/url\(\s*(['"]?)(.*?)\1\s*\)/i);
+      if (urlMatch && properties.backgroundImage === undefined) {
+        properties.backgroundImage = urlMatch[0];
+      }
+      const repeatMatch = text.match(
+        /\b(repeat-x|repeat-y|no-repeat|repeat|space|round)\b/i,
+      );
+      if (repeatMatch && properties.backgroundRepeat === undefined) {
+        properties.backgroundRepeat = repeatMatch[1].toLowerCase();
+      }
+    }
+  }
+  return { selector, properties };
+};
 
 const toCssPropName = (prop: string) => prop.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase());
 
@@ -148,9 +191,11 @@ export const useStyleManager = createWithEqualityFn<StyleManagerState>((set, get
         newStyleSources[selector] = {};
       }
 
-      // 標記為已註冊
+      // 只補 registered；勿蓋掉已匯入／手動的來源標記
       Object.keys(init).forEach(prop => {
-        newStyleSources[selector][prop] = 'registered';
+        const existing = newStyleSources[selector][prop];
+        if (existing === "imported" || existing === "manual") return;
+        newStyleSources[selector][prop] = "registered";
       });
 
       const newAllStyles = new Map(state.allStyles);
@@ -158,16 +203,28 @@ export const useStyleManager = createWithEqualityFn<StyleManagerState>((set, get
         newAllStyles.set(selector, new Map());
       }
 
+      const now = Date.now();
       Object.entries(init).forEach(([prop, value]) => {
+        const existing = newAllStyles.get(selector)!.get(prop);
+        // 用途：feature remount 時不可把 draft／上傳寫入的 manual／imported 蓋成 registered 預設。
+        if (existing && (existing.source === "imported" || existing.source === "manual")) {
+          return;
+        }
         newAllStyles.get(selector)!.set(prop, {
           value,
-          source: 'registered',
-          timestamp: Date.now()
+          source: "registered",
+          timestamp: now,
         });
       });
 
       // merged baseline: old initial + new init（須攤平至 selector，勿用 { mergedInitial } 簡寫成巢狀 key）
       const mergedInitial = { ...(state.initial[selector] || {}), ...init } as StyleProps;
+      // 用途：保留已有 current（draft import／上傳）；只補尚未出現的預設 key。
+      // 舊實作整包換成 mergedInitial，會在子元件 mount 時清掉父層剛 import 的值。
+      const mergedCurrent = {
+        ...mergedInitial,
+        ...(state.current[selector] || {}),
+      } as StyleProps;
 
       return {
         initial: {
@@ -176,7 +233,7 @@ export const useStyleManager = createWithEqualityFn<StyleManagerState>((set, get
         },
         current: {
           ...state.current,
-          [selector]: mergedInitial,
+          [selector]: mergedCurrent,
         },
         styleSources: newStyleSources,
         allStyles: newAllStyles
@@ -228,6 +285,7 @@ export const useStyleManager = createWithEqualityFn<StyleManagerState>((set, get
       const current = { ...state.current };
       const allStyles = new Map(state.allStyles);
       const styleSources = { ...state.styleSources };
+      const normalizedRules = cssRules.map(normalizeImportedLogoRule);
 
       // 注入 CSS 規則到頁面
       if (typeof document !== 'undefined') {
@@ -238,7 +296,7 @@ export const useStyleManager = createWithEqualityFn<StyleManagerState>((set, get
         styleElement.id = IMPORTED_STYLE_TAG_ID;
 
         // 生成 CSS 規則
-        const cssRulesText = cssRules.map(({ selector, properties }) => {
+        const cssRulesText = normalizedRules.map(({ selector, properties }) => {
           const propertiesText = Object.entries(properties)
             .map(([prop, value]) => {
               const cssProp = prop.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase());
@@ -252,7 +310,7 @@ export const useStyleManager = createWithEqualityFn<StyleManagerState>((set, get
         document.head.appendChild(styleElement);
       }
 
-      cssRules.forEach(({ selector, properties }) => {
+      normalizedRules.forEach(({ selector, properties }) => {
         if (!current[selector]) {
           current[selector] = {};
         }
@@ -440,6 +498,15 @@ export const useStyleManager = createWithEqualityFn<StyleManagerState>((set, get
       selectorGroups.get(selector)!.set(prop, entry);
     });
 
+    // 用途：平常／hover opacity 成對匯出並補 transition，否則 Plurk 缺 :hover 或動畫。
+    ensureDashboardShellTransitionExport(
+      selectorGroups,
+      state.current[DASHBOARD_SHELL_SELECTOR],
+      state.initial[DASHBOARD_SHELL_SELECTOR],
+      state.current[DASHBOARD_SHELL_HOVER_SELECTOR],
+      state.initial[DASHBOARD_SHELL_HOVER_SELECTOR],
+    );
+
     const responseCountProps = selectorGroups.get(RESPONSE_COUNT_EXPORT_SELECTOR);
     const responseCountNewProps = selectorGroups.get(RESPONSE_COUNT_NEW_EXPORT_SELECTOR);
     const handledSelectors = new Set<string>();
@@ -467,9 +534,31 @@ export const useStyleManager = createWithEqualityFn<StyleManagerState>((set, get
       handledSelectors.add(RESPONSE_COUNT_NEW_EXPORT_SELECTOR);
     }
 
+    // 噗寶自定義：有圖時走嚴格匯出格式（中文註解 + background shorthand + shell）
+    const dynamicLogoProps = selectorGroups.get(DYNAMIC_LOGO_SELECTOR);
+    const dynamicLogoImgProps = selectorGroups.get(DYNAMIC_LOGO_IMG_SELECTOR);
+    if (dynamicLogoProps || dynamicLogoImgProps) {
+      const block = formatDynamicLogoExportBlock(
+        dynamicLogoProps ?? new Map(),
+        dynamicLogoImgProps,
+      );
+      if (block) {
+        cssOutput.push(block);
+        handledSelectors.add(DYNAMIC_LOGO_SELECTOR);
+        handledSelectors.add(DYNAMIC_LOGO_IMG_SELECTOR);
+      }
+    }
+
     // 生成 CSS 和 tags
     selectorGroups.forEach((props, selector) => {
       if (handledSelectors.has(selector)) return;
+
+      // 河道背景走固定順序匯出，避免 formatCssBlock 字母排序打亂 shell / background
+      if (selector === TIMELINE_BACKGROUND_SELECTOR) {
+        const block = formatTimelineBackgroundExportBlock(props);
+        if (block) cssOutput.push(block);
+        return;
+      }
 
       const block = formatCssBlock(selector, props);
       if (block) cssOutput.push(block);

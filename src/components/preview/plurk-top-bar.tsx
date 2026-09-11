@@ -193,7 +193,7 @@ export const PlurkTopBar = () => {
         </div>
         <div id="top-bar-title">
           <div id="plurk_logo" className="nohover">
-            <Link href="/editor" aria-label="Plurk CSS Generator">
+            <Link href="/editor" aria-label="Plurk Styler">
               <IconPlurkCssGeneratorLogo size={28} aria-hidden={false} />
             </Link>
           </div>

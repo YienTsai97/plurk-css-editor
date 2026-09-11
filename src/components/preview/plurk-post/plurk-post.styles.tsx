@@ -46,10 +46,8 @@ const PostSupplementStyles = () => (
       border-radius: 3px;
       font-size: 12px;
     }
-    .q_whispers { background-color: #32007e; }
+    /* q_whispers 背景／R18 模糊／消音透明度改由各 feature Styles 常駐輸出，避免與 store 雙源。 */
     .porn-icon { margin: 0 4px 0 1px; display: inline-flex; vertical-align: middle; line-height: 0; }
-    .timeline-cnt .porn:not(.link_extend) .text_holder { filter: blur(5px); }
-    .timeline-cnt .muted { opacity: 0.4; }
 
     .plurk .text_holder a.hashtag { color: #e74c3c; text-decoration: none; font-weight: normal; white-space: nowrap; }
     .plurk .text_holder a.hashtag:hover { text-decoration: underline; }

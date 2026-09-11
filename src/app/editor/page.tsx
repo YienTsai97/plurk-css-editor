@@ -1,10 +1,17 @@
 "use client";
 
 import { EditorIoDock } from "@/components/editor/editor-io-dock";
+import { DashboardFriendsFansStyles } from "@/components/preview/plurk-dashboard/dashboard-friends-fans/dashboard-friends-fans-styles";
+import { DashboardKarmaStyles } from "@/components/preview/plurk-dashboard/dashboard-karma/dashboard-karma-styles";
+import { DashboardSegmentStyles } from "@/components/preview/plurk-dashboard/dashboard-segment/dashboard-segment-styles";
+import { DashboardShellStyles } from "@/components/preview/plurk-dashboard/dashboard-shell/dashboard-shell-styles";
 import { PlurkDashboard } from "@/components/preview/plurk-dashboard/plurk-dashboard";
 import { PlurkFooter } from "@/components/preview/plurk-footer";
 import { PlurkTimeline } from "@/components/preview/plurk-timeline/plurk-timeline";
 import { PlurkTimelineControl } from "@/components/preview/plurk-timeline/plurk-timeline-control";
+import { MutedOpacityStyles } from "@/components/preview/plurk-post/plurk-post-muted/muted-opacity-styles";
+import { R18BlurStyles } from "@/components/preview/plurk-post/plurk-post-r18/r18-blur-styles";
+import { WhisperQualifierStyles } from "@/components/preview/plurk-post/plurk-post-whisper/whisper-qualifier-styles";
 import { ResponseCountStyles } from "@/components/preview/plurk-timeline/response-count/response-count-styles";
 import { TimelineBackground } from "@/components/preview/plurk-timeline/timeline-background/timeline-background";
 import { PlurkTopBar } from "@/components/preview/plurk-top-bar";
@@ -118,13 +125,23 @@ const EditorPageContent = () => {
     <>
       {/* 用途：常駐掛載 response_count 的 store 註冊與高權重預覽 CSS，不能依賴右鍵選單是否開啟。 */}
       <ResponseCountStyles />
+      {/* 用途：R18／消音／偷偷說樣式常駐註冊與預覽，與右鍵選單開關無關。 */}
+      <R18BlurStyles />
+      <MutedOpacityStyles />
+      <WhisperQualifierStyles />
+      {/* 用途：主控台外殼／各區塊／好友粉絲／Karma 樣式常駐註冊與預覽。 */}
+      <DashboardShellStyles />
+      <DashboardSegmentStyles />
+      <DashboardFriendsFansStyles />
+      <DashboardKarmaStyles />
 
       <div id="layout_body">
+        <div id="background_layout"></div>
         <PlurkTopBar />
         <div id="layout_content_html" className="_lch_">
           <div id="layout_content" className="_lc_ clearfix">
             <TimelineBackground isLoggingIn={isLoggingIn}>
-              <PlurkTimeline />
+              <PlurkTimeline isLoggingIn={isLoggingIn} />
               <PlurkTimelineControl />
             </TimelineBackground>
             <PlurkDashboard />

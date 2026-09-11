@@ -1,3 +1,8 @@
+import {
+  DASHBOARD_SHELL_HOVER_SELECTOR,
+  DASHBOARD_SHELL_SELECTOR,
+} from "@/components/preview/plurk-dashboard/dashboard-shell/dashboard-shell.constants";
+import { ensureDashboardShellTransitionExport } from "@/components/preview/plurk-dashboard/dashboard-shell/dashboard-shell.utils";
 import type { SliceGet, SliceSet, StyleEntry, StyleManagerState } from "../types";
 import { cssValueToString } from "../utils/cssValue";
 import { toKebabCase } from "../utils/kebab";
@@ -26,6 +31,15 @@ export const createExportSlice = (_set: SliceSet, get: SliceGet): Partial<StyleM
       if (!selectorGroups.has(selector)) selectorGroups.set(selector, new Map());
       selectorGroups.get(selector)!.set(prop, entry); // later overwrites earlier
     });
+
+    // 用途：平常／hover opacity 成對匯出並補 transition，否則 Plurk 缺 :hover 或動畫。
+    ensureDashboardShellTransitionExport(
+      selectorGroups,
+      state.current[DASHBOARD_SHELL_SELECTOR],
+      state.initial[DASHBOARD_SHELL_SELECTOR],
+      state.current[DASHBOARD_SHELL_HOVER_SELECTOR],
+      state.initial[DASHBOARD_SHELL_HOVER_SELECTOR],
+    );
 
     selectorGroups.forEach((props, selector) => {
       const lines: string[] = [];

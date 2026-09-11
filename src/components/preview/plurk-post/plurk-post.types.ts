@@ -73,4 +73,6 @@ export type PostData = {
 export type PlurkPostProps = {
   data: PostData
   skipStyles?: boolean
+  /** 用途：外層 slot class（如 `porn`／`new`），供右鍵類型選單判斷。 */
+  slotClassName?: string
 }

@@ -1,5 +1,6 @@
-"use client"
+"use client";
 
+import { editorMenuFieldLabelStyle } from "@/components/editor/editor-context-menu";
 import { Slider } from "@/components/ui/slider";
 import type { CSSProperties, ReactNode } from "react";
 
@@ -11,7 +12,10 @@ type NumberSliderControlProps = {
   max: number;
   step?: number;
   unit?: string;
+  /** 用途：是否在標籤旁顯示目前數值；預設 true。 */
+  showValue?: boolean;
   style?: CSSProperties;
+  disabled?: boolean;
 };
 
 const clamp = (value: number, min: number, max: number) =>
@@ -31,37 +35,54 @@ export const NumberSliderControl = ({
   max,
   step = 1,
   unit = "",
+  showValue = true,
   style,
+  disabled = false,
 }: NumberSliderControlProps) => {
   const safeValue = clamp(Number.isFinite(value) ? value : min, min, max);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 6, ...style }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 0,
+        paddingLeft: 8,
+        paddingRight: 8,
+        opacity: disabled ? 0.45 : 1,
+        ...style,
+      }}
+    >
       <div
         style={{
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           gap: 12,
-          fontSize: 12,
-          color: "#374151",
+          ...editorMenuFieldLabelStyle,
         }}
       >
         <span>{label}</span>
-        <span style={{ color: "#6b7280", fontVariantNumeric: "tabular-nums" }}>
-          {formatValue(safeValue, step)}
-          {unit}
-        </span>
+        {showValue ? (
+          <span style={{ color: "#6b7280", fontVariantNumeric: "tabular-nums" }}>
+            {formatValue(safeValue, step)}
+            {unit}
+          </span>
+        ) : null}
       </div>
-      <Slider
-        value={[safeValue]}
-        min={min}
-        max={max}
-        step={step}
-        onValueChange={([nextValue]) => {
-          onChange(clamp(nextValue ?? min, min, max));
-        }}
-      />
+      <div style={{ paddingBottom: "10px" }}>
+        <Slider
+          value={[safeValue]}
+          min={min}
+          max={max}
+          step={step}
+          disabled={disabled}
+          onValueChange={([nextValue]) => {
+            if (disabled) return;
+            onChange(clamp(nextValue ?? min, min, max));
+          }}
+        />
+      </div>
     </div>
   );
 };

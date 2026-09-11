@@ -34,6 +34,50 @@ const fullLineSlashCommentRe = () => /^[ \t]*\/\/[^\r\n]*$/gm;
 const toCamelProp = (prop: string) =>
   prop.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
 
+/**
+ * 用途：匯出 `#dynamic_logo>img`（無空白）與 store key `#dynamic_logo > img` 對齊，
+ * 避免 opacity:0 進錯 selector，hasImage／預覽不同步。
+ */
+const normalizeImportedSelector = (selector: string): string =>
+  selector
+    .replace(/#dynamic_logo\s*>\s*img/gi, "#dynamic_logo > img")
+    .trim();
+
+/**
+ * 用途：把 `background` 縮寫拆成 backgroundImage／Repeat 等 longhand。
+ * 噗寶匯出用 `background: url(...) no-repeat;`；若不拆，store 只有 `background`，
+ * `hasCustomLogoImage(backgroundImage)` 會一直是 false（整顆殼當 trigger + 控制項灰掉）。
+ */
+export const expandBackgroundShorthand = (
+  properties: Record<string, CssValue>,
+): Record<string, CssValue> => {
+  const raw = properties.background;
+  if (raw === undefined) return properties;
+
+  const text = String(raw).trim();
+  const next: Record<string, CssValue> = { ...properties };
+  delete next.background;
+
+  if (!text || text === "none") {
+    if (next.backgroundImage === undefined) next.backgroundImage = "none";
+    return next;
+  }
+
+  const urlMatch = text.match(/url\(\s*(['"]?)(.*?)\1\s*\)/i);
+  if (urlMatch && next.backgroundImage === undefined) {
+    next.backgroundImage = urlMatch[0];
+  }
+
+  const repeatMatch = text.match(
+    /\b(repeat-x|repeat-y|no-repeat|repeat|space|round)\b/i,
+  );
+  if (repeatMatch && next.backgroundRepeat === undefined) {
+    next.backgroundRepeat = repeatMatch[1].toLowerCase();
+  }
+
+  return next;
+};
+
 /** 用途：只在第一個冒號切開「名稱: 值」，避免 url(https://...) 被截成 url(https。 */
 const splitDeclaration = (declaration: string) => {
   const colonIndex = declaration.indexOf(":");
@@ -137,9 +181,9 @@ export const analyzeImportedCss = (cssString: string): CssImportAnalysis => {
     const propertiesMatch = rule.match(/\{([^}]+)\}/);
 
     if (selectorMatch && propertiesMatch) {
-      const selector = selectorMatch[1].trim();
+      const selector = normalizeImportedSelector(selectorMatch[1].trim());
       const propertiesText = propertiesMatch[1];
-      const properties: Record<string, CssValue> = {};
+      let properties: Record<string, CssValue> = {};
       const propertyPairs = propertiesText
         .split(/[\n;]/)
         .map((pair) => pair.trim())
@@ -157,6 +201,8 @@ export const analyzeImportedCss = (cssString: string): CssImportAnalysis => {
           });
         }
       });
+
+      properties = expandBackgroundShorthand(properties);
 
       if (selector.includes("//")) {
         ignored.push({

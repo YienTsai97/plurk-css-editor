@@ -1,6 +1,9 @@
+import { TIMELINE_BACKGROUND_EXPORT_SHELL } from "@/components/preview/plurk-timeline/timeline-background/timeline-background.constants";
 import { BODY_STYLE_DEFAULTS } from "@/store/styleManager/defaults";
 import { cssValueToString } from "@/store/styleManager/utils/cssValue";
 import type { EditorPageStyleProps } from "./page.type";
+
+const shell = TIMELINE_BACKGROUND_EXPORT_SHELL;
 
 export const EditorPageStyle = ({
   backgroundImage,
@@ -8,9 +11,6 @@ export const EditorPageStyle = ({
   backgroundRepeat,
   backgroundPosition,
   backgroundAttachment,
-  backgroundImageChanged,
-  backgroundSizeChanged,
-  backgroundRepeatChanged,
 }: EditorPageStyleProps) => {
   const bi = cssValueToString(backgroundImage) || BODY_STYLE_DEFAULTS.backgroundImage;
   const bs = cssValueToString(backgroundSize) || BODY_STYLE_DEFAULTS.backgroundSize;
@@ -18,24 +18,24 @@ export const EditorPageStyle = ({
   const bp = cssValueToString(backgroundPosition) || BODY_STYLE_DEFAULTS.backgroundPosition;
   const ba = cssValueToString(backgroundAttachment) || BODY_STYLE_DEFAULTS.backgroundAttachment;
 
-  const highSpecParts = [
-    backgroundImageChanged && `background-image: ${bi}`,
-    (backgroundImageChanged || backgroundSizeChanged) && `background-size: ${bs}`,
-    (backgroundImageChanged || backgroundRepeatChanged) && `background-repeat: ${br}`,
-  ].filter(Boolean);
-
-  const showHighSpec =
-    backgroundImageChanged ||
-    backgroundSizeChanged ||
-    backgroundRepeatChanged;
-
   return (
-    <>
-      <style>
-        {`
-    body {
-      background: #eeebf0;
-      color: #333;
+    <style>
+      {`
+    html, body {
+    font: 12px / 18px 'Lucida Grande', 'Lucida Sans Unicode', 'Lucida Sans Regular', Tahoma, Verdana, sans-serif;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    }
+    #background_layout{
+      position: ${shell.position};
+      width: ${shell.width};
+      height: ${shell.height};
+      top: ${shell.top};
+      left: ${shell.left};
+      z-index: ${shell.zIndex};
+      background-color: ${shell.backgroundColor};
       background-image: ${bi};
       background-size: ${bs}; /* 強制滿版*/
       background-position: ${bp}; /* 置中裁切 */
@@ -49,6 +49,8 @@ export const EditorPageStyle = ({
       overflow-x: hidden;
     }
     body {
+      background: #eeebf0;
+      color: #333;
       overflow-y: scroll;
     }
     body, div, dl, dt, dd, ul, ol, li, h1, h2, h3, h4, h5, h6, pre, code, form, fieldset, legend, input, textarea, p, blockquote, th, td {
@@ -94,10 +96,6 @@ export const EditorPageStyle = ({
     }
 
   `}
-      </style>
-      {showHighSpec ? (
-        <style>{`html body { ${highSpecParts.join("; ")}; }`}</style>
-      ) : null}
-    </>
+    </style>
   );
 };

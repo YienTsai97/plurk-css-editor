@@ -54,7 +54,6 @@ export const ResponseCountMenu = () => {
           step={1}
           unit="%"
           onChange={(value) => borderRadius.set(`${value}%`)}
-          style={{ padding: "0 4px" }}
         />
 
         {/* 用途：一般/已讀回應數徽章的顏色設定。 */}

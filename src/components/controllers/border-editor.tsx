@@ -10,6 +10,9 @@ import { NumberSliderControl } from "./number-slider-control";
 type Prop = {
   borderValue: CssValue | undefined;
   setChange: (v: CssValue) => void;
+  /** 用途：可選；有傳時在邊框 popover 內顯示圓角滑桿。 */
+  borderRadiusValue?: CssValue | undefined;
+  setBorderRadius?: (v: CssValue) => void;
   /** 用途：讓 context menu 可傳入整排 trigger；未傳時維持原本的 Set Border 按鈕。 */
   trigger?: ReactNode;
   triggerStyle?: CSSProperties;
@@ -26,6 +29,14 @@ const parseBorderValue = (input: string) => {
     };
   }
   return { value: 0, unit: 'px' };
+};
+
+/** 用途：把 borderRadius（如 `0px`）轉成滑桿數字。 */
+const parseRadiusPx = (value: CssValue | undefined) => {
+  if (value === undefined || value === null) return 0;
+  const text = String(value).trim();
+  const match = text.match(/^(\d+(?:\.\d+)?)/);
+  return Number(match?.[1] ?? 0);
 };
 
 const parseBorderParts = (input: string) => {
@@ -69,6 +80,8 @@ const isTransparentColor = (input: string) => {
 const BorderEditor = ({
   borderValue,
   setChange,
+  borderRadiusValue,
+  setBorderRadius,
   trigger = "",
   triggerStyle,
   triggerClassName,
@@ -79,6 +92,8 @@ const BorderEditor = ({
   const [unit, setUnit] = useState<string>("px");
   const widthSlider = getBorderWidthSliderConfig(unit);
   const widthNumber = Number(width) || 0;
+  const showRadius = typeof setBorderRadius === "function";
+  const radiusPx = parseRadiusPx(borderRadiusValue);
 
   const toHexLabel = (input: string) => {
     const value = input.trim().toLowerCase();
@@ -247,6 +262,7 @@ const BorderEditor = ({
               step={widthSlider.step}
               unit={"px"}//unit
               onChange={handleWidthChange}
+              style={{ paddingLeft: 0, paddingRight: 0 }}
             />
             {/* <select
               value={unit}
@@ -266,6 +282,19 @@ const BorderEditor = ({
               <option value="%">%</option>
             </select> */}
           </div>
+
+          {showRadius ? (
+            <NumberSliderControl
+              label="圓角"
+              value={radiusPx}
+              min={0}
+              max={50}
+              step={1}
+              unit="px"
+              onChange={(value) => setBorderRadius(`${value}px`)}
+              style={{ paddingLeft: 0, paddingRight: 0 }}
+            />
+          ) : null}
 
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <label style={{ fontSize: '12px', minWidth: '40px' }}>樣式:</label>

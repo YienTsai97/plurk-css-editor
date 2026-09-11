@@ -2,24 +2,28 @@
 
 import {
   EditorMenuItem,
-  EditorMenuTitle
+  EditorMenuTitle,
 } from "@/components/editor/editor-context-menu";
+import { TimelineDecorationMenu } from "../timeline-decoration/timeline-decoration-menu";
 
 type TimelineBackgroundMenuProps = {
   onOpenBackgroundDialog: () => void;
+  onOpenDecorationDialog: () => void;
 };
 
-/** 用途：河道右鍵選單的背景設定內容，實際開啟的上傳 dialog 由 feature wrapper 常駐管理。 */
+/**
+ * 用途：河道右鍵選單內容。
+ * 背景圖與裝飾圖各自開獨立 ImageUploader，選單只負責入口，dialog 由 wrapper 常駐管理。
+ */
 export const TimelineBackgroundMenu = ({
   onOpenBackgroundDialog,
+  onOpenDecorationDialog,
 }: TimelineBackgroundMenuProps) => {
   return (
     <>
       <EditorMenuTitle>河道</EditorMenuTitle>
-      {/* <EditorMenuSectionLabel>背景設定</EditorMenuSectionLabel> */}
-      <EditorMenuItem onSelect={onOpenBackgroundDialog}>
-        更換背景圖
-      </EditorMenuItem>
+      <EditorMenuItem onSelect={onOpenBackgroundDialog}>更換背景圖</EditorMenuItem>
+      <TimelineDecorationMenu onOpenDecorationDialog={onOpenDecorationDialog} />
     </>
   );
 };

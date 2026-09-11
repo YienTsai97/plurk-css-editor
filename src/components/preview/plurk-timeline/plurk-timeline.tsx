@@ -1,6 +1,11 @@
+import { DynamicLogo } from "./dynamic-logo/dynamic-logo";
 import PlurkTimelinePosts from "./plurk-timeline-posts";
 
-export const PlurkTimeline = () => {
+type PlurkTimelineProps = {
+  isLoggingIn: boolean;
+};
+
+export const PlurkTimeline = ({ isLoggingIn }: PlurkTimelineProps) => {
   return (
     <>
       <style>
@@ -69,13 +74,6 @@ export const PlurkTimeline = () => {
            讓吉祥物 #dynamic_logo 能跟 .plurk 比 z-index，而不被整層河道蓋住。 */
         .timeline-bg, .timeline-bg .block_bg {
           z-index: 0;
-        }
-        ._lc_ .timeline-bg {
-          //background-color: #000;
-          //background-image: url(https://images.plurk.com/68NDxQEGFWDhWS1QOqI1ny.png);
-          background-size: 50px;
-          background-repeat: repeat-x;
-          background-position: bottom;
         }
         .bottom-line {
           width: 100%;
@@ -153,14 +151,7 @@ export const PlurkTimeline = () => {
           </div>
           <div className="cmp_back_to_today pif-arrow-left">Begin</div>
         </div>
-        <div id="dynamic_logo">
-          <img
-            id="creature"
-            src="/creature1.png"
-            alt="creature"
-            style={{ width: "auto", height: "auto" }}
-          />
-        </div>
+        <DynamicLogo isLoggingIn={isLoggingIn} />
       </div>
     </>
   );
